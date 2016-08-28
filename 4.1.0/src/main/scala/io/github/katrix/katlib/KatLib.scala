@@ -40,15 +40,15 @@ import io.github.katrix.katlib.persistant.{Config, ConfigValue}
 object KatLib {
 
 	final val CompiledAgainst = "4.1.0"
-	final val Version         = s"$CompiledAgainst-1.0.0"
-	final val ConstantVersion = "4.1.0-1.0.0"
+	final val Version         = s"$CompiledAgainst-1.0.1"
+	final val ConstantVersion = "4.1.0-1.0.1"
 	assert(Version == ConstantVersion)
 
 	private var _plugin: KatLib = _
 	implicit def plugin: KatLib = _plugin
 }
 
-@Plugin(id = LibKatLibPlugin.Id, name = LibKatLibPlugin.Name, version = KatLib.ConstantVersion, authors = LibKatLibPlugin.Authors)
+@Plugin(id = LibKatLibPlugin.Id, name = LibKatLibPlugin.Name, version = KatLib.ConstantVersion, authors = Array("Katrix"))
 class KatLib @Inject()(
 	logger: Logger,
 	@ConfigDir(sharedRoot = true)
