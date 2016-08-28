@@ -48,7 +48,7 @@ object KatLib {
 	implicit def plugin: KatLib = _plugin
 }
 
-@Plugin(id = LibKatLibPlugin.Id, name = LibKatLibPlugin.Name, version = KatLib.ConstantVersion)
+@Plugin(id = LibKatLibPlugin.Id, name = LibKatLibPlugin.Name, version = KatLib.ConstantVersion, authors = LibKatLibPlugin.Authors)
 class KatLib @Inject()(
 	logger: Logger,
 	@ConfigDir(sharedRoot = true)

@@ -38,23 +38,21 @@ final class CmdPlugin(implicit plugin: KatPlugin) extends CommandBase(None) {
 		val text = Text.builder(container.name).color(TextColors.YELLOW)
 		container.version.foreach(version => text.append(s" v.$version".text))
 		container.description.foreach(description => text.append(s"\n$description".text))
+		container.url.foreach(url => text.append(s"\n$url".text))
+		if(container.authors.nonEmpty) text.append(s"Created by: ${container.authors.mkString(", ")}".text)
 
 		src.sendMessage(text.build())
 		CommandResult.success()
 	}
 
-	override def commandSpec: CommandSpec = {
-		val builder = CommandSpec.builder()
-			.description(s"Shows some information about ${plugin.container.name}".text)
-			.executor(this)
-			.permission(s"${plugin.container.id}.info")
-
-		registerSubcommands(builder)
-
-		builder.build()
-	}
+	override def commandSpec: CommandSpec = CommandSpec.builder()
+		.description(s"Shows some information about ${plugin.container.name}".text)
+		.executor(this)
+		.permission(s"${plugin.container.id}.info")
+		.children(this)
+		.build()
 
 	override def children: Seq[CommandBase] = Seq(CmdHelp)
 
-	override def aliases: Seq[String] = Seq(s"${plugin.container.id}")
+	override def aliases: Seq[String] = Seq(s"${plugin.container.id}", s"${plugin.container.name}")
 }

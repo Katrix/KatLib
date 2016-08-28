@@ -44,7 +44,6 @@ object Implicits {
 		def richText: RichText = Text.of(string)
 	}
 
-
 	implicit class RichText(val textOf: Text) extends AnyVal {
 
 		def error(): Text = color(TextColors.RED).textOf
@@ -93,17 +92,6 @@ object Implicits {
 	}
 
 	implicit def typeToken[A: ClassTag]: TypeToken[A] = TypeToken.of(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
-
-	/*
-	implicit def typeTokenMacro[A]: TypeToken[A] = macro typeTokenMacroImpl
-
-	import scala.reflect.macros.whitebox
-
-	def typeTokenMacroImpl[A](c: whitebox.Context)(implicit wtt: c.WeakTypeTag[A]): c.Expr[TypeToken[A]] = {
-		import c.universe._
-		c.Expr[TypeToken[A]](q"TypeToken.of(classOf[$wtt])")
-	}
-	*/
 
 	implicit class RichConfigurationNode(val node: ConfigurationNode) extends AnyVal {
 

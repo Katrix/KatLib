@@ -30,6 +30,15 @@ import io.github.katrix.katlib.helper.LogHelper
 import ninja.leaping.configurate.commented.CommentedConfigurationNode
 import ninja.leaping.configurate.objectmapping.ObjectMappingException
 
+/**
+	* An object that holds on to an individual value in a config
+	*
+	* @param value The value of this node
+	* @param typeToken The typetoken of this node. Normally implicit
+	* @param comment The comment for this node
+	* @param path The path to get to this node from the root node
+	* @tparam A The value type this object stores
+	*/
 case class ConfigValue[A](value: A, implicit val typeToken: TypeToken[A], comment: String, path: Seq[String]) {
 
 	def setNode(node: CommentedConfigurationNode): Unit = {

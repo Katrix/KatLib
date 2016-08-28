@@ -120,11 +120,9 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Co
 
 		//StringBuilder here for performance
 		@tailrec
-		def inner(optParent: Option[CommandBase], builder: StringBuilder): String = {
-			optParent match {
-				case None => builder.insert(0, '/').mkString.trim
-				case Some(commandParent) => inner(commandParent.parent, builder.insert(0, s"${commandParent.aliases.head} "))
-			}
+		def inner(optParent: Option[CommandBase], builder: StringBuilder): String = optParent match {
+			case None => builder.insert(0, '/').mkString.trim
+			case Some(commandParent) => inner(commandParent.parent, builder.insert(0, s"${commandParent.aliases.head} "))
 		}
 
 		inner(Some(command), new StringBuilder)
@@ -143,7 +141,15 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Co
 		Text.of(commandText, " ", commandSpec.getShortDescription(src).orElse(commandSpec.getUsage(src)))
 	}
 
-	private[command] def registerCommandHelp(command: CommandBase, family: Seq[CommandBase]) {
+	private[command] def registerCommandHelp(command: CommandBase) {
+
+		@tailrec
+		def commandFamily(optRelative: Option[CommandBase], currentFamily: Seq[CommandBase]): Seq[CommandBase] = optRelative match {
+			case None => currentFamily
+			case Some(relative) => commandFamily(relative.parent, currentFamily :+ relative)
+		}
+
+		val family = commandFamily(Some(command), Seq())
 		LogHelper.trace(s"Registering help command: $family")
 		registeredCommands += command
 		familyList += family

@@ -36,5 +36,4 @@ object LogHelper {
 
 	def error(any: Any)(implicit plugin: KatPlugin): Unit = logger.error(String.valueOf(any))
 	def error(msg: String, e: Throwable)(implicit plugin: KatPlugin): Unit = logger.error(msg, e)
-
 }

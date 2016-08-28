@@ -20,8 +20,6 @@
  */
 package io.github.katrix.katlib.command
 
-import scala.annotation.tailrec
-
 import org.spongepowered.api.command.CommandException
 import org.spongepowered.api.command.spec.{CommandExecutor, CommandSpec}
 
@@ -37,21 +35,8 @@ abstract class CommandBase(val parent: Option[CommandBase])(implicit plugin: Kat
 	def children: Seq[CommandBase] = Nil
 
 	def registerHelp(): Unit = {
-		plugin.pluginCmd.CmdHelp.registerCommandHelp(this, commandFamily)
+		plugin.pluginCmd.CmdHelp.registerCommandHelp(this)
 		children.foreach(_.registerHelp())
-	}
-
-	private def commandFamily: Seq[CommandBase] = {
-
-		@tailrec
-		def inner(relative: Option[CommandBase], currentFamily: Seq[CommandBase]): Seq[CommandBase] = {
-			relative match {
-				case None => currentFamily
-				case Some(command) => inner(command.parent, currentFamily :+ command)
-			}
-		}
-
-		inner(Some(this), Seq())
 	}
 
 	protected def registerSubcommands(builder: CommandSpec.Builder): Unit = {
