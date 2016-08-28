@@ -24,5 +24,4 @@ object LibKatLibPlugin {
 
 	final val Id      = "katlib"
 	final val Name    = "KatLib"
-	final val Authors = Array("Katrix")
 }
