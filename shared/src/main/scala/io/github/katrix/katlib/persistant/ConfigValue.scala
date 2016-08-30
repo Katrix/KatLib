@@ -20,6 +20,8 @@
  */
 package io.github.katrix.katlib.persistant
 
+import java.util.NoSuchElementException
+
 import scala.util.Try
 
 import com.google.common.reflect.TypeToken
@@ -53,9 +55,12 @@ object ConfigValue {
 	}
 
 	def apply[A](node: CommentedConfigurationNode, existing: ConfigValue[A])(implicit plugin: KatPlugin): ConfigValue[A] = {
-		Try(node.getNode(existing.path: _*).getValue(existing.typeToken)).map(value => existing.copy(value = value)).recover {
+		Try(Option(node.getNode(existing.path: _*).getValue(existing.typeToken)).get).map(value => existing.copy(value = value)).recover {
 			case e: ObjectMappingException =>
-				LogHelper.info(s"Failed to get value of ${existing.path}, using default instead")
+				LogHelper.error(s"Failed to deserialize value of ${existing.path}, using the default instead")
+				existing
+			case e: NoSuchElementException =>
+				LogHelper.debug(s"Failed to find the value of ${existing.path}, using the default instead")
 				existing
 		}.get
 	}
