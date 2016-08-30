@@ -23,14 +23,15 @@ package io.github.katrix.katlib.helper
 import java.nio.file.Path
 import java.util.Optional
 
+import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
 import org.slf4j.Logger
 import org.spongepowered.api.asset.Asset
 import org.spongepowered.api.plugin.{PluginContainer => SpongePluginContainer}
-import org.spongepowered.api.text.Text
 import org.spongepowered.api.text.format.{TextColor, TextColors, TextStyle}
+import org.spongepowered.api.text.{Text, TextTemplate}
 
 import com.google.common.reflect.TypeToken
 
@@ -100,5 +101,49 @@ object Implicits {
 		def value[A: TypeToken]: A = node.getValue(implicitly[TypeToken[A]])
 
 		def list[A: TypeToken]: Seq[A] = Seq(node.getList(implicitly[TypeToken[A]]).asScala: _*)
+	}
+
+	implicit class TextStringContext(private val sc: StringContext) extends AnyVal {
+
+		/**
+			* Create a [[Text]] representation of this string.
+			* Really just a nicer way of saying [[Text#of(anyRef: AnyRef*]]
+			*/
+		def t(args: Any*): Text = {
+			sc.checkLengths(args)
+
+			@tailrec
+			def inner(partsLeft: Seq[String], argsLeft: Seq[Any], res: Seq[AnyRef]): Seq[AnyRef] = {
+				if(argsLeft == Nil) res
+				else {
+					inner(partsLeft.tail, argsLeft.tail, (res :+ argsLeft.head.asInstanceOf[AnyRef]) :+ partsLeft.head)
+				}
+			}
+
+			Text.of(inner(sc.parts.tail, args, Seq(sc.parts.head)): _*)
+		}
+
+		/**
+			* Create a [[Text]] representation of this string.
+			* String arguments are converted into [[TextTemplate.Arg]]s
+			* Really just a nicer way of saying [[TextTemplate#of(anyRef: AnyRef*]]
+			*/
+		def tt(args: Any*): TextTemplate = {
+			sc.checkLengths(args)
+
+			@tailrec
+			def inner(partsLeft: Seq[String], argsLeft: Seq[Any], res: Seq[AnyRef]): Seq[AnyRef] = {
+				if(argsLeft == Nil) res
+				else {
+					val argObj = argsLeft.head match {
+						case string: String => TextTemplate.arg(string)
+						case any@_ => any.asInstanceOf[AnyRef]
+					}
+					inner(partsLeft.tail, argsLeft.tail, (res :+ argObj) :+ partsLeft.head)
+				}
+			}
+
+			TextTemplate.of(inner(sc.parts.tail, args, Seq(sc.parts.head)): _*)
+		}
 	}
 }
