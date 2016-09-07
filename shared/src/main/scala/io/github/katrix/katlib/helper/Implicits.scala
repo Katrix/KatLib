@@ -67,6 +67,16 @@ object Implicits {
 		}
 	}
 
+	implicit class RichOption[A](val option: Option[A]) extends AnyVal {
+
+		def toOptional: Optional[A] = {
+			option match {
+				case Some(value) => Optional.of(value)
+				case None => Optional.empty()
+			}
+		}
+	}
+
 	implicit class Castable(val obj: AnyRef) extends AnyVal {
 
 		def asInstanceOfOpt[T <: AnyRef : ClassTag] = {
