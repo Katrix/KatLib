@@ -5,13 +5,13 @@ import scala.collection.mutable
 
 trait ImmutableSeqValue[A] extends ImmutableIterableValue[A, immutable.Seq[A]] {
 
-	override type Self = ImmutableSeqValue[A]
-	override type MutableCollection <: mutable.Seq[A]
-	override type Mutable = SeqValue[A]
+	override type Self <: ImmutableSeqValue[A]
+	override type MutableCollection = mutable.Seq[A]
+	override type Mutable <: SeqValue[A]
 
-	def apply(index: Int): A
-	def head: A
-	def tail: immutable.Seq[A]
+	def apply(index: Int): A = get.apply(index)
+	def head: A = get.head
+	def tail: immutable.Seq[A] = get.tail
 }
 
 trait SeqValue[A] extends IterableValue[A, mutable.Seq[A]] {
@@ -20,7 +20,7 @@ trait SeqValue[A] extends IterableValue[A, mutable.Seq[A]] {
 	override type ImmutableCollection <: immutable.Seq[A]
 	override type Immutable = ImmutableSeqValue[A]
 
-	def apply(index: Int): A
-	def head: A
-	def tail: mutable.Seq[A]
+	def apply(index: Int): A = get.apply(index)
+	def head: A = get.head
+	def tail: mutable.Seq[A] = get.tail
 }

@@ -33,7 +33,7 @@ trait ImmutableIterableValue[B, A <: immutable.Iterable[B]] extends ImmutableVal
 		*
 		* @return The size
 		*/
-	def size: Int
+	def size: Int = get.size
 
 	/**
 		* Checks if the backed [[Iterable]] is empty.
@@ -41,7 +41,7 @@ trait ImmutableIterableValue[B, A <: immutable.Iterable[B]] extends ImmutableVal
 		* @see [[Iterable#isEmpty]]
 		* @return True if the collection is empty
 		*/
-	def isEmpty: Boolean
+	def isEmpty: Boolean = get.isEmpty
 
 	/**
 		* Adds a single element to the underlying [[Iterable]]
@@ -54,7 +54,7 @@ trait ImmutableIterableValue[B, A <: immutable.Iterable[B]] extends ImmutableVal
 	def ++(elements: Iterable[B]): Self
 
 	def map(f: A => A): Self
-	def flatMap(f: A => Self): Self
+	def flatMap(f: A => Self): Self = f(get)
 	def filter(f: A => Boolean): Self
 
 	/**

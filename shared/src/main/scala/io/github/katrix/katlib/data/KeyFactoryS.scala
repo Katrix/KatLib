@@ -50,4 +50,6 @@ object KeyFactoryS {
 		override def toString: String = s"Key{Value:OptionValue<${implicitly[ClassTag[A]].runtimeClass.getSimpleName}>, Query: ${query.toString}}"
 	}
 
+	def makeMapKey[A : ClassTag](query: DataQuery): Key[Nothing[A]] = ???
+
 }

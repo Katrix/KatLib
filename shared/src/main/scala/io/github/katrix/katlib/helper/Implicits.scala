@@ -29,6 +29,8 @@ import scala.reflect.ClassTag
 
 import org.slf4j.Logger
 import org.spongepowered.api.asset.Asset
+import org.spongepowered.api.data.{DataHolder, DataTransactionResult}
+import org.spongepowered.api.data.manipulator.DataManipulator
 import org.spongepowered.api.plugin.{PluginContainer => SpongePluginContainer}
 import org.spongepowered.api.text.format.{TextColor, TextColors, TextStyle}
 import org.spongepowered.api.text.{Text, TextTemplate}
@@ -154,6 +156,25 @@ object Implicits {
 			}
 
 			TextTemplate.of(inner(sc.parts.tail, args, Seq(sc.parts.head)): _*)
+		}
+	}
+
+	implicit class RichDataHolder(val dataHolder: DataHolder) extends AnyVal {
+
+		def get[A <: DataManipulator[_, _] : ClassTag]: Option[A] = {
+			dataHolder.get(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+		}
+
+		def getOrCreate[A <: DataManipulator[_, _] : ClassTag]: Option[A] = {
+			dataHolder.get(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+		}
+
+		def supports[A <: DataManipulator[_, _] : ClassTag]: Boolean = {
+			dataHolder.supports(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
+		}
+
+		def remove[A <: DataManipulator[_, _] : ClassTag]: DataTransactionResult = {
+			dataHolder.remove(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
 		}
 	}
 }
