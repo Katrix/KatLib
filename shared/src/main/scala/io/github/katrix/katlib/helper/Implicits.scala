@@ -29,8 +29,9 @@ import scala.reflect.ClassTag
 
 import org.slf4j.Logger
 import org.spongepowered.api.asset.Asset
-import org.spongepowered.api.data.{DataHolder, DataTransactionResult}
-import org.spongepowered.api.data.manipulator.DataManipulator
+import org.spongepowered.api.data.{DataHolder, DataManager, DataSerializable, DataTransactionResult, DataView, ImmutableDataBuilder, ImmutableDataHolder}
+import org.spongepowered.api.data.manipulator.{DataManipulator, DataManipulatorBuilder, ImmutableDataManipulator}
+import org.spongepowered.api.data.persistence.{DataBuilder, DataContentUpdater, DataSerializer}
 import org.spongepowered.api.plugin.{PluginContainer => SpongePluginContainer}
 import org.spongepowered.api.text.format.{TextColor, TextColors, TextStyle}
 import org.spongepowered.api.text.{Text, TextTemplate}
@@ -175,6 +176,55 @@ object Implicits {
 
 		def remove[A <: DataManipulator[_, _] : ClassTag]: DataTransactionResult = {
 			dataHolder.remove(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
+		}
+	}
+
+	implicit class RichDataManager(val dataManager: DataManager) extends AnyVal {
+
+		def registerBuilder[A <: DataSerializable : ClassTag](builder: DataBuilder[A]): Unit = {
+			dataManager.registerBuilder(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], builder)
+		}
+
+		def registerContentUpdater[A <: DataSerializable : ClassTag](updater: DataContentUpdater): Unit = {
+			dataManager.registerContentUpdater(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], updater)
+		}
+
+		def getWrappedContentUpdater[A <: DataSerializable : ClassTag](from: Int, to: Int): Option[DataContentUpdater] = {
+			dataManager.getWrappedContentUpdater(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], from, to).toOption
+		}
+
+		def getBuilder[A <: DataSerializable : ClassTag]: Option[DataBuilder[A]] = {
+			dataManager.getBuilder(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+		}
+
+		def deserialize[A <: DataSerializable : ClassTag](dataView: DataView): Option[A] = {
+			dataManager.deserialize(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], dataView).toOption
+		}
+
+		def register[T <: ImmutableDataHolder[T] : ClassTag, B <: ImmutableDataBuilder[T, B]](builder: B): Unit = {
+			dataManager.register(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]], builder)
+		}
+
+		def getImmutableBuilder[A <: ImmutableDataHolder[A] : ClassTag, B <: ImmutableDataBuilder[A, B]]: Option[B] = {
+			dataManager.getImmutableBuilder(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+		}
+
+		def getManipulatorBuilder[A <: DataManipulator[A, B] : ClassTag, B <: ImmutableDataManipulator[B, A]]: Option[DataManipulatorBuilder[A, B]] = {
+			val clazz = implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]
+			dataManager.getManipulatorBuilder(clazz).toOption.asInstanceOf[Option[DataManipulatorBuilder[A, B]]]
+		}
+
+		def getImmutableManipulatorBuilder[A <: DataManipulator[A, B], B <: ImmutableDataManipulator[B, A] : ClassTag]: Option[DataManipulatorBuilder[A, B]] = {
+			val clazz = implicitly[ClassTag[B]].runtimeClass.asInstanceOf[Class[B]]
+			dataManager.getImmutableManipulatorBuilder(clazz).toOption.asInstanceOf[Option[DataManipulatorBuilder[A, B]]]
+		}
+
+		def registerSerializer[A : ClassTag](serializer: DataSerializer[A]): Unit = {
+			dataManager.registerSerializer(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], serializer)
+		}
+
+		def getSerializer[A : ClassTag]: Option[DataSerializer[A]] = {
+			dataManager.getSerializer(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
 		}
 	}
 }
