@@ -26,6 +26,7 @@ import java.util.Optional
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
+import scala.util.Try
 
 import org.slf4j.Logger
 import org.spongepowered.api.asset.Asset
@@ -33,6 +34,7 @@ import org.spongepowered.api.data.{DataHolder, DataManager, DataSerializable, Da
 import org.spongepowered.api.data.manipulator.{DataManipulator, DataManipulatorBuilder, ImmutableDataManipulator}
 import org.spongepowered.api.data.persistence.{DataBuilder, DataContentUpdater, DataSerializer}
 import org.spongepowered.api.plugin.{PluginContainer => SpongePluginContainer}
+import org.spongepowered.api.service.{ProviderRegistration, ServiceManager}
 import org.spongepowered.api.text.format.{TextColor, TextColors, TextStyle}
 import org.spongepowered.api.text.{Text, TextTemplate}
 
@@ -225,6 +227,18 @@ object Implicits {
 
 		def getSerializer[A : ClassTag]: Option[DataSerializer[A]] = {
 			dataManager.getSerializer(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+		}
+	}
+
+	implicit class RichServiceManager(val serviceManager: ServiceManager) extends AnyVal {
+
+		def provide[A : ClassTag]: Option[A] = serviceManager.provide(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+		def provideTry[A : ClassTag]: Try[A] = Try(serviceManager.provideUnchecked(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]))
+
+		def isRegistered[A : ClassTag]: Boolean = serviceManager.isRegistered(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
+
+		def getRegistration[A : ClassTag]: Option[ProviderRegistration[A]] = {
+			serviceManager.getRegistration(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
 		}
 	}
 }
