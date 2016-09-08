@@ -30,9 +30,11 @@ import scala.util.Try
 
 import org.slf4j.Logger
 import org.spongepowered.api.asset.Asset
-import org.spongepowered.api.data.{DataHolder, DataManager, DataSerializable, DataTransactionResult, DataView, ImmutableDataBuilder, ImmutableDataHolder}
 import org.spongepowered.api.data.manipulator.{DataManipulator, DataManipulatorBuilder, ImmutableDataManipulator}
-import org.spongepowered.api.data.persistence.{DataBuilder, DataContentUpdater, DataSerializer}
+import org.spongepowered.api.data.persistence.{DataBuilder, DataContentUpdater}
+import org.spongepowered.api.data.value.ValueContainer
+import org.spongepowered.api.data.value.mutable.CompositeValueStore
+import org.spongepowered.api.data.{DataManager, DataSerializable, DataTransactionResult, DataView, ImmutableDataBuilder, ImmutableDataHolder}
 import org.spongepowered.api.plugin.{PluginContainer => SpongePluginContainer}
 import org.spongepowered.api.service.{ProviderRegistration, ServiceManager}
 import org.spongepowered.api.text.format.{TextColor, TextColors, TextStyle}
@@ -162,24 +164,26 @@ object Implicits {
 		}
 	}
 
-	implicit class RichDataHolder(val dataHolder: DataHolder) extends AnyVal {
+	/*
+	implicit class RichCompositeValueStore[S <: CompositeValueStore[S, H], H <: ValueContainer[_]](val compositeValueStore: CompositeValueStore[S, H]) extends AnyVal {
 
-		def get[A <: DataManipulator[_, _] : ClassTag]: Option[A] = {
-			dataHolder.get(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+		def get[A <: H : ClassTag]: Option[A] = {
+			compositeValueStore.get(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
 		}
 
-		def getOrCreate[A <: DataManipulator[_, _] : ClassTag]: Option[A] = {
-			dataHolder.get(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+		def getOrCreate[A <: H : ClassTag]: Option[A] = {
+			compositeValueStore.getOrCreate(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
 		}
 
-		def supports[A <: DataManipulator[_, _] : ClassTag]: Boolean = {
-			dataHolder.supports(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
+		def supports[A <: H : ClassTag]: Boolean = {
+			compositeValueStore.supports(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
 		}
 
-		def remove[A <: DataManipulator[_, _] : ClassTag]: DataTransactionResult = {
-			dataHolder.remove(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
+		def remove[A <: H : ClassTag]: DataTransactionResult = {
+			compositeValueStore.remove(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
 		}
 	}
+	*/
 
 	implicit class RichDataManager(val dataManager: DataManager) extends AnyVal {
 
@@ -209,24 +213,6 @@ object Implicits {
 
 		def getImmutableBuilder[A <: ImmutableDataHolder[A] : ClassTag, B <: ImmutableDataBuilder[A, B]]: Option[B] = {
 			dataManager.getImmutableBuilder(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
-		}
-
-		def getManipulatorBuilder[A <: DataManipulator[A, B] : ClassTag, B <: ImmutableDataManipulator[B, A]]: Option[DataManipulatorBuilder[A, B]] = {
-			val clazz = implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]
-			dataManager.getManipulatorBuilder(clazz).toOption.asInstanceOf[Option[DataManipulatorBuilder[A, B]]]
-		}
-
-		def getImmutableManipulatorBuilder[A <: DataManipulator[A, B], B <: ImmutableDataManipulator[B, A] : ClassTag]: Option[DataManipulatorBuilder[A, B]] = {
-			val clazz = implicitly[ClassTag[B]].runtimeClass.asInstanceOf[Class[B]]
-			dataManager.getImmutableManipulatorBuilder(clazz).toOption.asInstanceOf[Option[DataManipulatorBuilder[A, B]]]
-		}
-
-		def registerSerializer[A : ClassTag](serializer: DataSerializer[A]): Unit = {
-			dataManager.registerSerializer(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], serializer)
-		}
-
-		def getSerializer[A : ClassTag]: Option[DataSerializer[A]] = {
-			dataManager.getSerializer(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
 		}
 	}
 
