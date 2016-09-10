@@ -13,7 +13,7 @@ lazy val commonSettings = Seq(
 
 lazy val katLibShared = project in file("shared") settings (commonSettings: _*) settings(
 	name := "KatLib-Shared",
-	version := "1.0.2",
+	version := "1.0.3",
 	assembleArtifact := false,
 	//Default version, needs to build correctly against all supported versions
 	libraryDependencies += "org.spongepowered" % "spongeapi" % "4.1.0" % "provided"
@@ -29,14 +29,17 @@ lazy val katLibShared = project in file("shared") settings (commonSettings: _*) 
 
 lazy val katLibV410 = project in file("4.1.0") dependsOn katLibShared settings (commonSettings: _*) settings(
 	name := "KatLib-4.1.0",
-	version := "1.0.2",
+	artifactName := { (sv, module, artifact) => s"​${artifact.name}-${module.revision}.${artifact.extension}"},
+	version := "1.0.3",
 	libraryDependencies += "org.spongepowered" % "spongeapi" % "4.1.0" % "provided"
 	)
 
 lazy val katLibV500 = project in file("5.0.0") dependsOn katLibShared settings (commonSettings: _*) settings(
 	name := "KatLib-5.0.0",
-	version := "1.0.2",
+	artifactName := { (sv, module, artifact) => s"​${artifact.name}-${module.revision}.${artifact.extension}"},
+	version := "1.0.3",
 	libraryDependencies += "org.spongepowered" % "spongeapi" % "5.0.0-SNAPSHOT" % "provided"
+
 	)
 
 lazy val katLibRoot = project in file(".") settings (publishArtifact := false) disablePlugins AssemblyPlugin aggregate
