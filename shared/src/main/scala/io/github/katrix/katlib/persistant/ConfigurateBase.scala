@@ -24,6 +24,7 @@ import java.io.IOException
 import java.nio.file.Path
 
 import scala.concurrent.Future
+import scala.util.Failure
 
 import com.typesafe.config.ConfigRenderOptions
 
@@ -111,8 +112,9 @@ abstract class ConfigurateBase[A](configDir: Path, name: String, data: Boolean)(
 	protected def saveFile(): Future[Unit] = {
 		import scala.concurrent.ExecutionContext.Implicits.global
 		val future = Future(cfgLoader.save(cfgRoot))
-		future.onFailure {
-			case e: IOException => e.printStackTrace()
+		future.onComplete {
+			case Failure(e) => e.printStackTrace()
+			case _ =>
 		}
 
 		future

@@ -23,14 +23,22 @@ package io.github.katrix.katlib.helper
 import java.nio.file.Path
 import java.util.Optional
 
+import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
+import scala.util.Try
 
 import org.slf4j.Logger
 import org.spongepowered.api.asset.Asset
+import org.spongepowered.api.data.manipulator.{DataManipulator, DataManipulatorBuilder, ImmutableDataManipulator}
+import org.spongepowered.api.data.persistence.{DataBuilder, DataContentUpdater}
+import org.spongepowered.api.data.value.ValueContainer
+import org.spongepowered.api.data.value.mutable.CompositeValueStore
+import org.spongepowered.api.data.{DataManager, DataSerializable, DataTransactionResult, DataView, ImmutableDataBuilder, ImmutableDataHolder}
 import org.spongepowered.api.plugin.{PluginContainer => SpongePluginContainer}
-import org.spongepowered.api.text.Text
+import org.spongepowered.api.service.{ProviderRegistration, ServiceManager}
 import org.spongepowered.api.text.format.{TextColor, TextColors, TextStyle}
+import org.spongepowered.api.text.{Text, TextTemplate}
 
 import com.google.common.reflect.TypeToken
 
@@ -62,6 +70,16 @@ object Implicits {
 			}
 			else {
 				None
+			}
+		}
+	}
+
+	implicit class RichOption[A](val option: Option[A]) extends AnyVal {
+
+		def toOptional: Optional[A] = {
+			option match {
+				case Some(value) => Optional.of(value)
+				case None => Optional.empty()
 			}
 		}
 	}
@@ -100,5 +118,113 @@ object Implicits {
 		def value[A: TypeToken]: A = node.getValue(implicitly[TypeToken[A]])
 
 		def list[A: TypeToken]: Seq[A] = Seq(node.getList(implicitly[TypeToken[A]]).asScala: _*)
+	}
+
+	implicit class TextStringContext(private val sc: StringContext) extends AnyVal {
+
+		/**
+			* Create a [[Text]] representation of this string.
+			* Really just a nicer way of saying [[Text#of(anyRef: AnyRef*]]
+			*/
+		def t(args: Any*): Text = {
+			sc.checkLengths(args)
+
+			@tailrec
+			def inner(partsLeft: Seq[String], argsLeft: Seq[Any], res: Seq[AnyRef]): Seq[AnyRef] = {
+				if(argsLeft == Nil) res
+				else {
+					inner(partsLeft.tail, argsLeft.tail, (res :+ argsLeft.head.asInstanceOf[AnyRef]) :+ partsLeft.head)
+				}
+			}
+
+			Text.of(inner(sc.parts.tail, args, Seq(sc.parts.head)): _*)
+		}
+
+		/**
+			* Create a [[Text]] representation of this string.
+			* String arguments are converted into [[TextTemplate.Arg]]s
+			* Really just a nicer way of saying [[TextTemplate#of(anyRef: AnyRef*]]
+			*/
+		def tt(args: Any*): TextTemplate = {
+			sc.checkLengths(args)
+
+			@tailrec
+			def inner(partsLeft: Seq[String], argsLeft: Seq[Any], res: Seq[AnyRef]): Seq[AnyRef] = {
+				if(argsLeft == Nil) res
+				else {
+					val argObj = argsLeft.head match {
+						case string: String => TextTemplate.arg(string)
+						case any@_ => any.asInstanceOf[AnyRef]
+					}
+					inner(partsLeft.tail, argsLeft.tail, (res :+ argObj) :+ partsLeft.head)
+				}
+			}
+
+			TextTemplate.of(inner(sc.parts.tail, args, Seq(sc.parts.head)): _*)
+		}
+	}
+
+	/*
+	implicit class RichCompositeValueStore[S <: CompositeValueStore[S, H], H <: ValueContainer[_]](val compositeValueStore: CompositeValueStore[S, H]) extends AnyVal {
+
+		def get[A <: H : ClassTag]: Option[A] = {
+			compositeValueStore.get(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+		}
+
+		def getOrCreate[A <: H : ClassTag]: Option[A] = {
+			compositeValueStore.getOrCreate(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+		}
+
+		def supports[A <: H : ClassTag]: Boolean = {
+			compositeValueStore.supports(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
+		}
+
+		def remove[A <: H : ClassTag]: DataTransactionResult = {
+			compositeValueStore.remove(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
+		}
+	}
+	*/
+
+	implicit class RichDataManager(val dataManager: DataManager) extends AnyVal {
+
+		def registerBuilder[A <: DataSerializable : ClassTag](builder: DataBuilder[A]): Unit = {
+			dataManager.registerBuilder(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], builder)
+		}
+
+		def registerContentUpdater[A <: DataSerializable : ClassTag](updater: DataContentUpdater): Unit = {
+			dataManager.registerContentUpdater(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], updater)
+		}
+
+		def getWrappedContentUpdater[A <: DataSerializable : ClassTag](from: Int, to: Int): Option[DataContentUpdater] = {
+			dataManager.getWrappedContentUpdater(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], from, to).toOption
+		}
+
+		def getBuilder[A <: DataSerializable : ClassTag]: Option[DataBuilder[A]] = {
+			dataManager.getBuilder(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+		}
+
+		def deserialize[A <: DataSerializable : ClassTag](dataView: DataView): Option[A] = {
+			dataManager.deserialize(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], dataView).toOption
+		}
+
+		def register[T <: ImmutableDataHolder[T] : ClassTag, B <: ImmutableDataBuilder[T, B]](builder: B): Unit = {
+			dataManager.register(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]], builder)
+		}
+
+		def getImmutableBuilder[A <: ImmutableDataHolder[A] : ClassTag, B <: ImmutableDataBuilder[A, B]]: Option[B] = {
+			dataManager.getImmutableBuilder(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+		}
+	}
+
+	implicit class RichServiceManager(val serviceManager: ServiceManager) extends AnyVal {
+
+		def provide[A : ClassTag]: Option[A] = serviceManager.provide(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+		def provideTry[A : ClassTag]: Try[A] = Try(serviceManager.provideUnchecked(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]))
+
+		def isRegistered[A : ClassTag]: Boolean = serviceManager.isRegistered(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
+
+		def getRegistration[A : ClassTag]: Option[ProviderRegistration[A]] = {
+			serviceManager.getRegistration(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+		}
 	}
 }
