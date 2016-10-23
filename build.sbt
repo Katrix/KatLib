@@ -1,47 +1,52 @@
 lazy val commonSettings = Seq(
+	name := s"KatLib-${spongeApiVersion.value}",
 	organization := "io.github.katrix",
+	version := "1.1.0",
 	scalaVersion := "2.11.8",
-	resolvers += "SpongePowered" at "https://repo.spongepowered.org/maven",
-	//resolvers += Resolver.sonatypeRepo("releases"),
-	//addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.8.0"),
 	assemblyShadeRules in assembly := Seq(
 		ShadeRule.rename("scala.**" -> "io.github.katrix.katlib.shade.scala.@1").inAll
 	),
 	scalacOptions += "-Xexperimental",
-	crossPaths := false
+	crossPaths := false,
+
+	spongePluginInfo := PluginInfo(
+		id = "katlib",
+		name = Some("KatLib"),
+		version = Some(s"${spongeApiVersion.value}-${version.value}"),
+		authors = Seq("Katrix"),
+		dependencies = Set(DependencyInfo("spongapi", Some(spongeApiVersion.value)))
+	),
+
+	artifactName := { (sv, module, artifact) => s"​${artifact.name}-${module.revision}.${artifact.extension}"},
+	assemblyJarName <<= (name, version) map { (name, version) => s"​$name-assembly-$version.jar" }
 )
 
-lazy val katLibShared = project in file("shared") settings (commonSettings: _*) settings(
+lazy val katLibShared = (project in file("shared"))
+	.enablePlugins(SpongePlugin)
+	.settings(commonSettings: _*)
+	.settings(
 	name := "KatLib-Shared",
-	version := "1.1.0",
 	assembleArtifact := false,
+	spongeMetaCreate := false,
 	//Default version, needs to build correctly against all supported versions
-	libraryDependencies += "org.spongepowered" % "spongeapi" % "4.1.0" % "provided"
-	/*
-	libraryDependencies ++= Seq( //TODO: Add shade rule
-		"org.typelevel" %% "cats-kernel" % "0.7.0",
-		"org.typelevel" %% "cats-core" % "0.7.0",
-		"org.typelevel" %% "cats-macros" % "0.7.0",
-		"org.typelevel" %% "cats-free" % "0.7.0"
-	)
-	*/
+	spongeApiVersion := "4.1.0"
 	)
 
-lazy val katLibV410 = project in file("4.1.0") dependsOn katLibShared settings (commonSettings: _*) settings(
-	name := "KatLib-4.1.0",
-	artifactName := { (sv, module, artifact) => s"​${artifact.name}-${module.revision}.${artifact.extension}"},
-	assemblyJarName <<= (name, version) map { (name, version) => s"​$name-assembly-$version.jar" },
-	version := "1.1.0",
-	libraryDependencies += "org.spongepowered" % "spongeapi" % "4.1.0" % "provided"
-	)
+lazy val katLibV410 = (project in file("4.1.0"))
+	.enablePlugins(SpongePlugin)
+	.dependsOn(katLibShared)
+	.settings(commonSettings: _*)
+	.settings(spongeApiVersion := "4.1.0")
 
-lazy val katLibV500 = project in file("5.0.0") dependsOn katLibShared settings (commonSettings: _*) settings(
-	name := "KatLib-5.0.0",
-	artifactName := { (sv, module, artifact) => s"​${artifact.name}-${module.revision}.${artifact.extension}"},
-	assemblyJarName <<= (name, version) map { (name, version) => s"​$name-assembly-$version.jar" },
-	version := "1.1.0",
-	libraryDependencies += "org.spongepowered" % "spongeapi" % "5.0.0-SNAPSHOT" % "provided"
-	)
+lazy val katLibV500 = (project in file("5.0.0"))
+	.enablePlugins(SpongePlugin)
+	.dependsOn(katLibShared)
+	.settings(commonSettings: _*)
+	.settings(spongeApiVersion := "5.0.0")
 
-lazy val katLibRoot = project in file(".") settings (publishArtifact := false) disablePlugins AssemblyPlugin aggregate
-	(katLibShared, katLibV410, katLibV500)
+lazy val katLibRoot = (project in file("."))
+	.settings(publishArtifact := false)
+	.disablePlugins(AssemblyPlugin)
+	.aggregate(katLibShared, katLibV410, katLibV500)
+
+resolvers += Resolver.defaultLocal
