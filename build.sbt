@@ -14,7 +14,7 @@ lazy val commonSettings = Seq(
 		name = Some("KatLib"),
 		version = Some(s"${spongeApiVersion.value}-${version.value}"),
 		authors = Seq("Katrix"),
-		dependencies = Set(DependencyInfo("spongapi", Some(spongeApiVersion.value)))
+		dependencies = Set(DependencyInfo("spongeapi", Some(spongeApiVersion.value)))
 	),
 
 	artifactName := { (sv, module, artifact) => s"​${artifact.name}-${module.revision}.${artifact.extension}"},
