@@ -1,42 +1,32 @@
 package io.github.katrix.katlib.serializer
 
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
+
+import com.google.common.reflect.TypeToken
 
 import io.github.katrix.katlib.KatPlugin
 import io.github.katrix.katlib.helper.LogHelper
-import io.github.katrix.katlib.serializer.CaseSerializers.{ConfigNode, ConfigSerializer}
+import io.github.katrix.katlib.serializer.ConfigSerializerBase.{ConfigNode, ConfigSerializer}
 import shapeless._
 import shapeless.labelled.{FieldType, field}
 
-object CaseSerializers {
+object ConfigSerializerBase {
 
 	//We hide the implementation behind these traits so that it's easier to use for other stuff, in addition to implicits
 	trait ConfigNode {
 		def getParent: ConfigNode
 		def getNode(string: String*): ConfigNode
-		def read[A: ConfigSerializer]: Try[A] = implicitly[ConfigSerializer[A]].read(this)
-		def write[A: ConfigSerializer](value: A): ConfigNode = implicitly[ConfigSerializer[A]].write(value, this)
+		def getChildren: Seq[ConfigNode]
 
-		def readBoolean: Try[Boolean]
-		def readByte: Try[Byte]
-		def readShort: Try[Short]
-		def readInt: Try[Int]
-		def readLong: Try[Long]
-		def readFloat: Try[Float]
-		def readDouble: Try[Double]
-		def readString: Try[String]
+		def read[A: ConfigSerializer]: Try[A]
+		def write[A: ConfigSerializer](value: A): ConfigNode
 
-		def writeBoolean(value: Boolean): ConfigNode
-		def writeByte(value: Byte): ConfigNode
-		def writeShort(value: Short): ConfigNode
-		def writeInt(value: Int): ConfigNode
-		def writeLong(value: Long): ConfigNode
-		def writeFloat(value: Float): ConfigNode
-		def writeDouble(value: Double): ConfigNode
-		def writeString(value: String): ConfigNode
+		def readList[A: ConfigSerializer]: Try[Seq[A]]
+		def writeList[A: ConfigSerializer](value: Seq[A]): ConfigNode
 	}
 
 	trait ConfigSerializer[A] {
+		def shouldBypass: Option[TypeToken[A]] = None
 		def write(obj: A, value: ConfigNode): ConfigNode
 		def read(value: ConfigNode): Try[A]
 	}
@@ -73,18 +63,19 @@ object CaseSerializers {
 	implicit def coProductSerializer[Name <: Symbol, Head, Remaining <: Coproduct](
 			implicit key: Witness.Aux[Name],
 			sh: Lazy[ConfigSerializer[Head]],
-			st: Lazy[ConfigSerializer[Remaining]]): ConfigSerializer[FieldType[Name, Head] :+: Remaining]
+			st: Lazy[ConfigSerializer[Remaining]],
+			stringSerializer: ConfigSerializer[String]): ConfigSerializer[FieldType[Name, Head] :+: Remaining]
 	= new ConfigSerializer[FieldType[Name, Head] :+: Remaining] {
 
 		override def write(obj: FieldType[Name, Head] :+: Remaining, value: ConfigNode): ConfigNode = obj match {
 			case Inl(found) =>
 				val headValue = sh.value.write(found, value)
-				headValue.getNode("type").writeString(key.value.name).getParent
+				headValue.getNode("type").write[String](key.value.name).getParent
 			case Inr(tail) => st.value.write(tail, value)
 		}
 
 		override def read(value: ConfigNode): Try[FieldType[Name, Head] :+: Remaining] = {
-			if(value.getNode("type").readString.map(_ == key.value.name).getOrElse(false))
+			if(value.getNode("type").read[String].map(_ == key.value.name).getOrElse(false))
 				sh.value.read(value).map(h => Inl(field[Name](h)))
 			else
 				st.value.read(value).map(t => Inr(t))
@@ -108,61 +99,61 @@ object CaseSerializers {
 
 trait DefaultSerializers {
 
-	implicit object BooleanSerializer extends ConfigSerializer[Boolean] {
-		override def write(obj: Boolean, value: ConfigNode): ConfigNode = value.writeBoolean(obj)
-		override def read(value: ConfigNode): Try[Boolean] = value.readBoolean
+	val BooleanSerializer: ConfigSerializer[Boolean]
+	val ByteSerializer   : ConfigSerializer[Byte]
+	val ShortSerializer  : ConfigSerializer[Short]
+	val IntSerializer    : ConfigSerializer[Int]
+	val LongSerializer   : ConfigSerializer[Long]
+	val FloatSerializer  : ConfigSerializer[Float]
+	val DoubleSerializer : ConfigSerializer[Double]
+	val StringSerializer : ConfigSerializer[String]
+
+	def SeqSerializer[A: ConfigSerializer]: ConfigSerializer[Seq[A]]
+	def MapSerializer[A: ConfigSerializer, B: ConfigSerializer]: ConfigSerializer[Map[A, B]]
+}
+
+trait DefaultSerializersImpl extends DefaultSerializers {
+
+	import io.github.katrix.katlib.helper.Implicits.typeToken
+
+	private def primitiveSerializer[A](typeToken: TypeToken[A]) = new ConfigSerializer[A] {
+		override def shouldBypass: Option[TypeToken[A]] = Some(typeToken)
+		override def write(obj: A, value: ConfigNode): ConfigNode = value.write(obj)(this)
+		override def read(value: ConfigNode): Try[A] = value.read(this)
 	}
 
-	implicit object ByteSerializer extends ConfigSerializer[Byte] {
-		override def write(obj: Byte, value: ConfigNode): ConfigNode = value.writeByte(obj)
-		override def read(value: ConfigNode): Try[Byte] = value.readByte
-	}
-
-	implicit object ShortSerializer extends ConfigSerializer[Short] {
-		override def write(obj: Short, value: ConfigNode): ConfigNode = value.writeShort(obj)
-		override def read(value: ConfigNode): Try[Short] = value.readShort
-	}
-
-	implicit object IntSerializer extends ConfigSerializer[Int] {
-		override def write(obj: Int, value: ConfigNode): ConfigNode = value.writeInt(obj)
-		override def read(value: ConfigNode): Try[Int] = value.readInt
-	}
-
-	implicit object LongSerializer extends ConfigSerializer[Long] {
-		override def write(obj: Long, value: ConfigNode): ConfigNode = value.writeLong(obj)
-		override def read(value: ConfigNode): Try[Long] = value.readLong
-	}
-
-	implicit object FloatSerializer extends ConfigSerializer[Float] {
-		override def write(obj: Float, value: ConfigNode): ConfigNode = value.writeFloat(obj)
-		override def read(value: ConfigNode): Try[Float] = value.readFloat
-	}
-
-	implicit object DoubleSerializer extends ConfigSerializer[Double] {
-		override def write(obj: Double, value: ConfigNode): ConfigNode = value.writeDouble(obj)
-		override def read(value: ConfigNode): Try[Double] = value.readDouble
-	}
-
-	implicit object StringSerializer extends ConfigSerializer[String] {
-		override def write(obj: String, value: ConfigNode): ConfigNode = value.writeString(obj)
-		override def read(value: ConfigNode): Try[String] = value.readString
-	}
-
-	
+	implicit val BooleanSerializer = primitiveSerializer(typeToken[Boolean])
+	implicit val ByteSerializer = primitiveSerializer(typeToken[Byte])
+	implicit val ShortSerializer = primitiveSerializer(typeToken[Short])
+	implicit val IntSerializer = primitiveSerializer(typeToken[Int])
+	implicit val LongSerializer = primitiveSerializer(typeToken[Long])
+	implicit val FloatSerializer = primitiveSerializer(typeToken[Float])
+	implicit val DoubleSerializer = primitiveSerializer(typeToken[Double])
+	implicit val StringSerializer = primitiveSerializer(typeToken[String])
 
 	implicit def SeqSerializer[A: ConfigSerializer] = new ConfigSerializer[Seq[A]] {
-		override def write(obj: Seq[A], value: ConfigNode): ConfigNode = ???
-		override def read(value: ConfigNode): Try[Seq[A]] = ???
+		override def write(obj: Seq[A], value: ConfigNode): ConfigNode = value.writeList(obj)
+		override def read(value: ConfigNode): Try[Seq[A]] = value.readList[A]
 	}
 
-	implicit def SetSerializer[A: ConfigSerializer] = new ConfigSerializer[Set[A]] {
-		override def write(obj: Set[A], value: ConfigNode): ConfigNode = ???
-		override def read(value: ConfigNode): Try[Set[A]] = ???
-	}
 
 	implicit def MapSerializer[A: ConfigSerializer, B: ConfigSerializer] = new ConfigSerializer[Map[A, B]] {
-		override def write(obj: Map[A, B], value: ConfigNode): ConfigNode = ???
-		override def read(value: ConfigNode): Try[Map[A, B]] = ???
+		override def write(obj: Map[A, B], value: ConfigNode): ConfigNode = {
+			obj.foldRight(value){case ((k, v), node) => node.write(k).write(v)}
+		}
+		override def read(value: ConfigNode): Try[Map[A, B]] = {
+			def flatten[T](xs: Seq[Try[T]]): Try[Seq[T]] = {
+				val (ss: Seq[Success[T]]@unchecked, fs: Seq[Failure[T]]@unchecked) =
+					xs.partition(_.isSuccess)
+
+				if (fs.isEmpty) Success(ss map (_.get))
+				else Failure[Seq[T]](fs.head.exception) // Only keep the first failure
+			}
+
+			val trySeq = value.getChildren.map(node => node.read[A].flatMap(a => node.read[B].map(b => (a, b))))
+
+			flatten(trySeq).map(_.toMap)
+		}
 	}
 }
 

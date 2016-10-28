@@ -5,42 +5,54 @@ import scala.util.Try
 
 import com.google.common.reflect.TypeToken
 
-import io.github.katrix.katlib.helper.Implicits.typeToken
-import io.github.katrix.katlib.serializer.CaseSerializers.{ConfigNode, ConfigSerializer}
+import io.github.katrix.katlib.serializer.ConfigSerializerBase.{ConfigNode, ConfigSerializer}
 import ninja.leaping.configurate.ConfigurationNode
 import ninja.leaping.configurate.objectmapping.ObjectMappingException
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializer
 import shapeless.Strict
 
-object TypeSerializerImpl extends DefaultSerializers {
+object TypeSerializerImpl extends DefaultSerializersImpl {
 
 	implicit class ConfigurationNodeWrapper(val node: ConfigurationNode) extends ConfigNode {
 
-		override def getParent: ConfigNode = new ConfigurationNodeWrapper(node.getParent)
-		override def getNode(string: String*): ConfigNode = new ConfigurationNodeWrapper(node.getNode(string: _*))
+		override def getParent: ConfigNode = node.getParent
+		override def getNode(string: String*): ConfigNode = node.getNode(string: _*)
+		override def getChildren: Seq[ConfigNode] = node.getChildrenList.asScala.map(new ConfigurationNodeWrapper(_))
+
+		override def read[A: ConfigSerializer]: Try[A] = {
+			val serializer = implicitly[ConfigSerializer[A]]
+			serializer.shouldBypass match {
+				case Some(token) => readValue(token)
+				case None => serializer.read(this)
+			}
+		}
 
 		def readValue[A: TypeToken]: Try[A] = Try(node.getValue(implicitly[TypeToken[A]]))
 
-		override def readBoolean: Try[Boolean] = readValue(typeToken[Boolean])
-		override def readByte: Try[Byte] = readValue(typeToken[Byte])
-		override def readShort: Try[Short] = readValue(typeToken[Short])
-		override def readInt: Try[Int] = readValue(typeToken[Int])
-		override def readLong: Try[Long] = readValue(typeToken[Long])
-		override def readFloat: Try[Float] = readValue(typeToken[Float])
-		override def readDouble: Try[Double] = readValue(typeToken[Double])
-		override def readString: Try[String] = readValue(typeToken[String])
+		override def readList[A: ConfigSerializer]: Try[Seq[A]] = {
+			implicitly[ConfigSerializer[A]].shouldBypass match {
+				case Some(token) => Try(node.getList[A](token).asScala)
+				case None => read[Map[Int, A]].map(_.toSeq.sortBy(_._1).map(_._2))
+			}
+		}
 
-		def writeValue(value: AnyRef): ConfigNode = {node.setValue(value); this}
-		def writeValue[A: TypeToken](value: A): ConfigNode = {node.setValue(implicitly[TypeToken[A]], value); this}
+		override def write[A: ConfigSerializer](value: A): ConfigNode = {
+			val serializer = implicitly[ConfigSerializer[A]]
+			serializer.shouldBypass match {
+				case Some(token) => writeValue(value)(token)
+				case None => serializer.write(value, this)
+			}
+		}
 
-		override def writeBoolean(value: Boolean): ConfigNode = writeValue(value)
-		override def writeByte(value: Byte): ConfigNode = writeValue(value)
-		override def writeShort(value: Short): ConfigNode = writeValue(value)
-		override def writeInt(value: Int): ConfigNode = writeValue(value)
-		override def writeLong(value: Long): ConfigNode = writeValue(value)
-		override def writeFloat(value: Float): ConfigNode = writeValue(value)
-		override def writeDouble(value: Double): ConfigNode = writeValue(value)
-		override def writeString(value: String): ConfigNode = writeValue(value)
+		def writeValue(value: AnyRef): ConfigNode = node.setValue(value)
+		def writeValue[A: TypeToken](value: A): ConfigNode = node.setValue(implicitly[TypeToken[A]], value)
+
+		override def writeList[A: ConfigSerializer](value: Seq[A]): ConfigNode = {
+			implicitly[ConfigSerializer[A]].shouldBypass match {
+				case Some(_) => writeValue(value.asJava)
+				case None => write[Map[Int, A]](value.zipWithIndex.map(_.swap).toMap)
+			}
+		}
 	}
 
 	implicit def typeSerializerConvert[A](implicit serializer: Strict[ConfigSerializer[A]]) = new TypeSerializer[A] {
@@ -52,7 +64,9 @@ object TypeSerializerImpl extends DefaultSerializers {
 		}
 	}
 
-	def fromTypeSerializer[A](typeSerializer: TypeSerializer[A])(implicit typeToken: TypeToken[A]): ConfigSerializer[A] = new ConfigSerializer[A] {
+	def fromTypeSerializer[A](typeSerializer: TypeSerializer[A], bypass: Boolean)(implicit typeToken: TypeToken[A]): ConfigSerializer[A]
+	= new ConfigSerializer[A] {
+		override def shouldBypass: Option[TypeToken[A]] = if(bypass) Some(typeToken) else None
 		override def write(obj: A, value: ConfigNode): ConfigNode = {
 			typeSerializer.serialize(typeToken, obj, value.asInstanceOf[ConfigurationNodeWrapper].node)
 			value
