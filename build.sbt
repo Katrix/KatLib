@@ -2,7 +2,7 @@ lazy val commonSettings = Seq(
 	name := s"KatLib-${spongeApiVersion.value}",
 	organization := "io.github.katrix",
 	version := "1.1.0",
-	scalaVersion := "2.11.8",
+	scalaVersion := "2.12.0",
 	assemblyShadeRules in assembly := Seq(
 		ShadeRule.rename("scala.**" -> "io.github.katrix.katlib.shade.scala.@1").inAll
 	),
