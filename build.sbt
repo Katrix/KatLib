@@ -2,7 +2,7 @@ lazy val commonSettings = Seq(
 	name := s"KatLib-${spongeApiVersion.value}",
 	organization := "io.github.katrix",
 	version := "1.1.0",
-	scalaVersion := "2.12.0",
+	scalaVersion := "2.11.8",
 	assemblyShadeRules in assembly := Seq(
 		ShadeRule.rename("scala.**" -> "io.github.katrix.katlib.shade.scala.@1").inAll
 	),
@@ -29,7 +29,10 @@ lazy val katLibShared = (project in file("shared"))
 	assembleArtifact := false,
 	spongeMetaCreate := false,
 	//Default version, needs to build correctly against all supported versions
-	spongeApiVersion := "4.1.0"
+	spongeApiVersion := "4.1.0",
+
+	libraryDependencies += ("org.scala-lang" % "scala-reflect" % scalaVersion.value),
+	addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 	)
 
 lazy val katLibV410 = (project in file("4.1.0"))
