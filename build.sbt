@@ -31,8 +31,12 @@ lazy val katLibShared = (project in file("shared"))
 	//Default version, needs to build correctly against all supported versions
 	spongeApiVersion := "4.1.0",
 
-	libraryDependencies += ("org.scala-lang" % "scala-reflect" % scalaVersion.value),
-	addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+		resolvers += Resolver.url("scalameta", url("http://dl.bintray.com/scalameta/maven"))(Resolver.ivyStylePatterns),
+		addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0.122" cross CrossVersion.full),
+		scalacOptions += "-Xplugin-require:macroparadise",
+		scalacOptions in (Compile, console) += "-Yrepl-class-based", // necessary to use console
+		sources in (Compile, doc) := Nil,
+		libraryDependencies += "org.scalameta" %% "scalameta" % "1.3.0.522"
 	)
 
 lazy val katLibV410 = (project in file("4.1.0"))

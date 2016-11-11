@@ -1,105 +1,109 @@
 package io.github.katrix.katlib.persistant
 
 import scala.annotation.{StaticAnnotation, compileTimeOnly}
+import scala.collection.immutable.Seq
 import scala.language.experimental.macros
-import scala.reflect.macros.whitebox
+import scala.meta._
+import scala.meta.dialects.Paradise211
 
-@compileTimeOnly("configTrait can only be used on a trait")
-class configTrait(name: String) extends StaticAnnotation {
-	def macroTransform(annottees: Any*): Any = macro MacroImpl.createConfig
-}
-@compileTimeOnly("comment can only be used inside a configTrait trait")
+@compileTimeOnly("comment can only be used inside a @configTrait trait")
 class comment(comment: String) extends StaticAnnotation
 
-object MacroImpl {
+@compileTimeOnly("@configTrait can only be used on a trait")
+class configTrait(name: String) extends StaticAnnotation {
 
-	def createConfig(c: whitebox.Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
-		import c.universe._
+	inline def apply(defn: Any): Any = meta {
 
-		val configName: String = "TODO"
+		val configName = arg""""TODO""""
 
-		val res = annottees.map(_.tree) match {
-			case Seq(q"trait $traitName {..$traitBody}") =>
-				val q"val $valName: $tpe = $valBody" = traitBody.head
-				c.info(c.enclosingPosition, tpe.getClass.toString, force = true)
+		val res = defn match {
+			case q"trait $traitName {..$traitBody}" =>
 
-				def getUsedBody(parents: Seq[TermName], tree: Tree): (Tree, Seq[Tree]) = {
+				def innerTraits(stats: Seq[Stat]): Seq[(Type.Name, Seq[Stat])] = {
+					stats.collect {
+						case q"trait $traitName {..$traitBody}" => traitName -> traitBody
+					}
+				}
 
-					def getRefTreeParents(name: TermName): RefTree = parents match {
-						case Seq() => q"$name"
-						case Seq(first) => q"$first.$name"
-						case Seq(first, second, rest @ _*) =>
-							val allParents = rest.foldLeft(Select(q"$first", second))((acc, parent) => Select(acc, parent))
-							Select(allParents, name)
+				def createTraitBody(varName: Pat.Var.Term, traitName: Type.Name, traitBody: Seq[Stat], parents: Seq[Term.Name]): (Some[Stat], Some[Stat], Seq[Stat]) = {
+					val newParents = parents :+ varName.name
+					val ctorTraitName = Ctor.Ref.Name(traitName.value)
+					val (implConfigBody, implDefaultBody, save) = traitBody.map(getUsedBody(newParents, _, innerTraits(traitBody))).unzip3
+
+					val configimpl = q"val $varName: $traitName = new $ctorTraitName {..${implConfigBody.flatten} }"
+					val defaultImpl = q"val $varName: $traitName = new $ctorTraitName {..${implDefaultBody.flatten} }"
+
+					(Some(configimpl), Some(defaultImpl), save.flatten)
+				}
+
+				def getUsedBody(parents: Seq[Term.Name], stat: Stat, innerSections: Seq[(Type.Name, Seq[Stat])]): (Option[Stat], Option[Stat], Seq[Stat]) = {
+
+					def selectNamesLeft(names: Seq[Term.Name]): Term.Ref with Pat = names match {
+						case Seq(first) => q"$first"
+						case Seq(first, second) => q"$first.$second"
+						case Seq(first, second, rest @ _*) => rest.foldLeft(q"$first.$second")((acc, parent) => q"$acc.$parent")
 					}
 
-					def getSelectRoot(name: TermName, root: TermName): Select = {
-						if(parents.nonEmpty) {
-							val allParents = parents.drop(1).foldLeft(Select(q"$root", parents.head))((acc, parent) => Select(acc, parent))
-							Select(allParents, name)
-						}
-						else Select(q"$root", name)
-					}
+					def getRefParents(name: Term.Name): Term.Ref with Pat = selectNamesLeft(parents :+ name)
+					def getSelectRoot(name: Term.Name, root: Term.Name): Term.Select = selectNamesLeft(root +: parents :+ name).asInstanceOf[Term.Select]
 
-					def createBody(comment: Option[Tree], name: TermName, tpe: Tree, body: Tree): (Tree, Seq[Tree]) = {
-						val refTree = getRefTreeParents(name)
+					def createBody(comment: Option[Term.Arg], varName: Pat.Var.Term, tpe: Type, body: Term): (Some[Stat], None.type, Seq[Stat]) = {
+						val name = varName.name
+						val nodeName = Lit(getRefParents(name).syntax)
 
-						//TODO: Not the best
-						val pathStringName = if(refTree.qualifier.nonEmpty) refTree.qualifier.toString() + "." + refTree.name.decodedName.toString
-						else refTree.name.decodedName.toString
-
-						val dataPath = getSelectRoot(name, "data")
-						val defaultPath = getSelectRoot(name, "DefaultConfig")
+						val dataPath = getSelectRoot(name, Term.Name("data"))
+						val defaultPath = getSelectRoot(name, Term.Name("DefaultConfig"))
 
 						val typeToken = tpe match {
-							case ident: Ident => q"TypeToken.of(classOf[$ident])"
+							case ident: Type.Name => q"TypeToken.of(classOf[$ident])"
 							case _ => q"new TypeToken[$tpe] {}"
 						}
 
 						val save = comment match {
-							case Some(foundComment) => q"cfgRoot.getNode($pathStringName.split('.'): _*).setComment($foundComment).setValue($dataPath)"
-							case None => q"cfgRoot.getNode($pathStringName.split('.'): _*).setValue($dataPath)"
+							case Some(foundComment) => q"cfgRoot.getNode($nodeName.split('.'): _*).setComment($foundComment).setValue($dataPath)"
+							case None => q"cfgRoot.getNode($nodeName.split('.'): _*).setValue($dataPath)"
 						}
-						val impl = if(parents.isEmpty) {
-							q"override val $name = Option(root.getNode($pathStringName.split('.'): _*).getValue($typeToken)).getOrElse($defaultPath)"
-						}
-						else q"val $name = Option(root.getNode($pathStringName.split('.'): _*).getValue($typeToken)).getOrElse($defaultPath)"
+						val configimpl = q"override val $varName: $tpe = Option(root.getNode($nodeName.split('.'): _*).getValue($typeToken)).getOrElse($defaultPath)"
 
-						(impl, Seq(save))
+						(Some(configimpl), None, Seq(save))
 					}
 
-					tree match {
-						case q"@_root_.io.github.katrix.katlib.persistant.comment($comment) val $name: $tpe = $body" =>
-							createBody(Some(comment), name, tpe, body)
-						case q"val $name: $tpe = $body" => createBody(None, name, tpe, body)
-						case q"object $name {..$objBody}" =>
-							val newParents = parents :+ name
-							val children = objBody.map(getUsedBody(newParents, _))
-							val (implChildren, saveChildren) = children.unzip
-							val impl = q"object $name {..$implChildren}"
-							(impl, saveChildren.flatten)
-						case _ => c.abort(tree.pos, "A configTrait can only have normal vals")
+					def getTyping(tpe: Option[Type], body: Term): Type = tpe.getOrElse(abort(body.pos, "Could not find type"))
+
+					stat match {
+						case q"@comment($comment) val $name: $tpe = $body" =>
+							createBody(Some(comment), name.asInstanceOf[Pat.Var.Term], getTyping(tpe.asInstanceOf[Option[Type]], body), body)
+						case q"val $name: $tpe = $body" =>
+							createBody(None, name.asInstanceOf[Pat.Var.Term], getTyping(tpe.asInstanceOf[Option[Type]], body), body)
+						case q"val $name: $tpe" if innerSections.exists(_._1.structure == tpe.structure) => //Yuck
+							val (traitName, traitBody) = innerSections.find(_._1.structure == tpe.structure).get
+							createTraitBody(name, traitName, traitBody, parents)
+						case q"trait $_ {..$_}" => (None, None,Seq())
+						case _ => abort(stat.pos, s"A configTrait can only have normal vals.\n${stat.syntax}")
 					}
 				}
 
-				val (implBody, saveBody) = traitBody.map(getUsedBody(Seq(), _)).unzip
-
-				def stripComment(tree: Tree): Tree = {
+				def stripComment(tree: Stat): Stat = {
 					tree match {
-						case q"@_root_.io.github.katrix.katlib.persistant.comment.comment($comment) val $name: $tpe = $body" => q"val $name: $tpe = $body"
-						case q"object $name {..$body}" =>
-							val strippedBody = body.map(stripComment(_))
-							q"object $name {..$strippedBody }"
+						case q"@comment($_) val $name: $tpe = $body" => q"val ${name.asInstanceOf[Pat.Var.Term]}: $tpe = $body"
+						case q"trait $name {..$body}" =>
+							val strippedBody = body.map(stripComment)
+							q"trait $name {..$strippedBody }"
 						case _ => tree //We already do other checks that outlaws anything other than val
 					}
 				}
 
-				val strippedBody = traitBody.map(stripComment(_))
+				val (implConfigBody, implDefaultBody, saveBody) = traitBody.map(getUsedBody(Seq(), _, innerTraits(traitBody))).unzip3
+				val strippedBody = traitBody.map(stripComment)
+
+				val traitNameString = traitName.value
+				val objTraitName = Term.Name(traitNameString)
+				val ctorTraitName = Ctor.Ref.Name(traitNameString)
 
 				q"""
 					trait $traitName {..$strippedBody}
 
-					object ${traitName.toTermName} {
+					object $objTraitName {
 						import _root_.ninja.leaping.configurate.ConfigurationNode
 						import _root_.ninja.leaping.configurate.hocon.{HoconConfigurationLoader => HoconBuilder}
 						import _root_.io.github.katrix.katlib.persistant.ConfigurateBase
@@ -107,13 +111,15 @@ object MacroImpl {
 						import _root_.java.nio.file.Path
 						import _root_.com.google.common.reflect.TypeToken
 
-		 				object DefaultConfig extends $traitName {}
+		 				object DefaultConfig extends $ctorTraitName {
+			 				..${implDefaultBody.flatten}
+		 				}
 
-						def configImpl(root: ConfigurationNode) = new $traitName {
-							..$implBody
+						def configImpl(root: ConfigurationNode) = new $ctorTraitName {
+							..${implConfigBody.flatten}
 						}
 
-			 			def loader(dir: Path, customOptions: HoconBuilder => HoconBuilder)(implicit plugin: KatPlugin) = {
+			 			def loader(dir: Path, customOptions: HoconBuilder => HoconBuilder)(implicit plugin: KatPlugin): ConfigurateBase[$traitName] = {
 			 				new ConfigurateBase[$traitName](dir, $configName, false) {
 
 								override def loadVersionedData(version: String): $traitName = version match {
@@ -130,12 +136,10 @@ object MacroImpl {
 			 			}
 					}
 				 """
-			case _ => c.abort(c.enclosingPosition, "Annotation @configTrait can be used on traits")
+			case _ => abort("@configTrait can only be used on a trait")
 		}
 
-		c.info(c.enclosingPosition, showCode(res), force = true)
-		//c.info(c.enclosingPosition, res.toString(), force = true)
-
-		c.Expr[Any](res)
+		println(res.syntax)
+		res
 	}
 }
