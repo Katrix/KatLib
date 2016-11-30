@@ -31,6 +31,7 @@ import org.spongepowered.api.command.{CommandResult, CommandSource}
 import org.spongepowered.api.service.pagination.PaginationService
 import org.spongepowered.api.text.Text
 import org.spongepowered.api.text.action.TextActions
+import org.spongepowered.api.text.format.TextColors._
 import org.spongepowered.api.text.format.{TextColors, TextStyles}
 
 import io.github.katrix.katlib.KatPlugin
@@ -44,58 +45,30 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Co
 	private val familyList         = new ArrayBuffer[Seq[CommandBase]]
 
 	//We only compute the command aliases once, as they really shouldn't change, and it's a heavy computation for just getting help
-	lazy private val commandsAliases = familyList.map(seq => {
-		val reversed = seq.reverse
-		val aliases = reversed.map(cmd => cmd.aliases)
+	lazy private val commandsAliases = familyList.flatMap(seq => {
+		val head = seq.head
 
-		(toAliases(aliases).map(seq => seq.mkString(" ")), reversed.last)
-	}).toMap.flatMap { case (seq, cmd) => (seq, Seq().padTo(seq.size, cmd)).zipped.toMap }
-
-	private def toAliases[A](original: Seq[Seq[A]]): Seq[Seq[A]] = {
-		val sizeNewList = original.map(_.size).product
-		val originalSize = original.size
-
-		@tailrec
-		def inner(indexTop: Int, workingList: Seq[A], createdList: Seq[Seq[A]], count: Seq[Int]): Seq[Seq[A]] = {
-			if(createdList.size >= sizeNewList) createdList
-			else {
-				val subList = original(indexTop)
-
-				val currentCount = count(indexTop)
-				val indexBottom = currentCount % subList.size
-				val newWorkingList = workingList :+ subList(indexBottom)
-
-				if(newWorkingList.size == originalSize) {
-					inner(0, Seq(), createdList :+ newWorkingList, count.updated(indexTop, currentCount + 1))
-				}
-				else {
-					inner(indexTop + 1, newWorkingList, createdList, count.updated(indexTop, currentCount + 1))
-				}
-			}
-		}
-
-		inner(0, Seq(), Seq(), Seq.fill(originalSize)(0))
-	}
+		seq.tail.foldLeft(head.aliases.map(str => str -> head))((acc, cmd) => for {
+				(str, newCmd) <- acc
+				cmdName <- cmd.aliases
+			} yield s"$cmdName $str" -> newCmd)
+	}).toMap
 
 	def execute(src: CommandSource, args: CommandContext): CommandResult = {
 		args.getOne[String](LibCommonCommandKey.Command).toOption match {
 			case None =>
 				val pages = Sponge.getGame.getServiceManager.provideUnchecked(classOf[PaginationService]).builder
-				pages.title(s"${plugin.container.name} Help".richText.color(TextColors.RED).textOf)
+				pages.title(t"$RED${plugin.container.name} Help")
 
 				val text = registeredCommands.map(commandBase => getCommandHelp(commandBase, src))
 				text.sorted
 				pages.contents(text.asJavaCollection)
 				pages.sendTo(src)
-			case Some(commandName) => commandsAliases.get(commandName).map(_.commandSpec) match {
+			case Some(commandName) => commandsAliases.get(commandName) match {
 				case None =>
-					src.sendMessage("Command not found".richText.error())
+					src.sendMessage(t"${RED}Command not found")
 					return CommandResult.empty
-				case Some(commandSpec) =>
-					val commandText = Text.builder.append(s"/$commandName".richText.color(TextColors.GREEN).style(TextStyles.UNDERLINE).textOf)
-					commandText.onHover(TextActions.showText(commandSpec.getHelp(src).orElse(commandSpec.getUsage(src))))
-					commandText.append("\n".text, commandSpec.getHelp(src).orElse(commandSpec.getUsage(src)))
-					src.sendMessage(commandText.build)
+				case Some(command) => src.sendMessage(getCommandHelp(command, src))
 			}
 		}
 
@@ -103,8 +76,8 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Co
 	}
 
 	def commandSpec: CommandSpec = CommandSpec.builder
-		.description("This command right here.".text)
-		.extendedDescription(s"Use /${plugin.container.id} help <command> <subcommand> \nto get help for a specific command".text)
+		.description(t"This command right here.")
+		.extendedDescription(t"Use /${plugin.container.id} help <command> <subcommand> \nto get help for a specific command")
 		.permission(s"${plugin.container.id}.help")
 		.arguments(GenericArguments.optional(GenericArguments.remainingJoinedStrings(LibCommonCommandKey.Command)))
 		.executor(this)
@@ -144,7 +117,7 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Co
 	private[command] def registerCommandHelp(command: CommandBase) {
 
 		@tailrec
-		def commandFamily(optRelative: Option[CommandBase], currentFamily: Seq[CommandBase]): Seq[CommandBase] = optRelative match {
+		def commandFamily(optParent: Option[CommandBase], currentFamily: Seq[CommandBase]): Seq[CommandBase] = optParent match {
 			case None => currentFamily
 			case Some(relative) => commandFamily(relative.parent, currentFamily :+ relative)
 		}
