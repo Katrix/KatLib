@@ -9,7 +9,7 @@ lazy val commonSettings = Seq(
 	scalacOptions += "-Xexperimental",
 	crossPaths := false,
 
-	spongePluginInfo := PluginInfo(
+	spongePluginInfo := spongePluginInfo.value.copy(
 		id = "katlib",
 		name = Some("KatLib"),
 		version = Some(s"${spongeApiVersion.value}-${version.value}"),
@@ -44,9 +44,15 @@ lazy val katLibV500 = (project in file("5.0.0"))
 	.settings(commonSettings: _*)
 	.settings(spongeApiVersion := "5.0.0")
 
+lazy val katLibV600 = (project in file("6.0.0"))
+	.enablePlugins(SpongePlugin)
+	.dependsOn(katLibShared)
+	.settings(commonSettings: _*)
+	.settings(spongeApiVersion := "6.0.0-SNAPSHOT")
+
 lazy val katLibRoot = (project in file("."))
 	.settings(publishArtifact := false)
 	.disablePlugins(AssemblyPlugin)
-	.aggregate(katLibShared, katLibV410, katLibV500)
+	.aggregate(katLibShared, katLibV410, katLibV500, katLibV600)
 
 resolvers += Resolver.defaultLocal
