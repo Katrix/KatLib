@@ -26,8 +26,6 @@ import java.nio.file.Path
 import scala.concurrent.Future
 import scala.util.Failure
 
-import com.typesafe.config.ConfigRenderOptions
-
 import io.github.katrix.katlib.KatPlugin
 import io.github.katrix.katlib.helper.LogHelper
 import ninja.leaping.configurate.commented.CommentedConfigurationNode
@@ -43,22 +41,27 @@ import ninja.leaping.configurate.hocon.HoconConfigurationLoader
 	* @param data If this file should hold data or not
 	* @tparam A What is returned when reading this file
 	*/
-abstract class ConfigurateBase[A](configDir: Path, name: String, data: Boolean)(implicit plugin: KatPlugin) {
+abstract class ConfigurateBase[A](configDir: Path, name: String, data: Boolean,
+		customOptions: HoconConfigurationLoader.Builder => HoconConfigurationLoader.Builder)(implicit plugin: KatPlugin) {
+
+	def this(configDir: Path, name: String, data: Boolean)(implicit plugin: KatPlugin) {
+		this(configDir, name, data, identity)
+	}
 
 	protected val path      = {
 		val ending = if(data) ".json" else ".conf"
 		configDir.resolve(s"$name$ending")
 	}
 	protected val cfgLoader = {
-		val builder = HoconConfigurationLoader.builder.setPath(path)
+		val builder = customOptions(HoconConfigurationLoader.builder.setPath(path))
 		if(data) {
-			builder.setRenderOptions(ConfigRenderOptions.concise)
+			//builder.setRenderOptions(ConfigRenderOptions.concise)
 			builder.setPreservesHeader(false)
 		}
 
 		builder.build()
 	}
-	protected val cfgRoot   = loadRoot()
+	protected var cfgRoot   = loadRoot()
 
 	{
 		val parent = path.getParent.toFile
