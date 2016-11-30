@@ -99,7 +99,7 @@ object ConfigSerializerBase {
 			override def write(obj: FieldType[Name, Head] :+: Tail, node: ConfigNode): ConfigNode = obj match {
 				case Inl(found) =>
 					val typeNode = strSer.write(key.value.name, node.getNode("type")).getParent
-					sh.value.write(found, typeNode.getNode(key.value.name)).getParent
+					sh.value.write(found, typeNode)
 				case Inr(tail) => st.value.write(tail, node)
 			}
 
