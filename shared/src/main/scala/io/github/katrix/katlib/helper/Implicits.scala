@@ -86,7 +86,7 @@ object Implicits {
 
 	implicit class Castable(val obj: AnyRef) extends AnyVal {
 
-		def asInstanceOfOpt[T <: AnyRef : ClassTag] = {
+		def asInstanceOfOpt[T <: AnyRef : ClassTag]: Option[T] = {
 			obj match {
 				case t: T => Some(t)
 				case _ => None

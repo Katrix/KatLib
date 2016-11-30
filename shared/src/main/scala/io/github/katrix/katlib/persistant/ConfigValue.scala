@@ -56,10 +56,10 @@ object ConfigValue {
 
 	def apply[A](node: CommentedConfigurationNode, existing: ConfigValue[A])(implicit plugin: KatPlugin): ConfigValue[A] = {
 		Try(Option(node.getNode(existing.path: _*).getValue(existing.typeToken)).get).map(value => existing.copy(value = value)).recover {
-			case e: ObjectMappingException =>
+			case _: ObjectMappingException =>
 				LogHelper.error(s"Failed to deserialize value of ${existing.path}, using the default instead")
 				existing
-			case e: NoSuchElementException =>
+			case _: NoSuchElementException =>
 				LogHelper.debug(s"Failed to find the value of ${existing.path}, using the default instead")
 				existing
 		}.get

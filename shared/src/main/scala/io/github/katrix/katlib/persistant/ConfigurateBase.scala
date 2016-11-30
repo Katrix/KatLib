@@ -24,7 +24,7 @@ import java.io.IOException
 import java.nio.file.Path
 
 import scala.concurrent.Future
-import scala.util.Failure
+import scala.util.{Failure, Try}
 
 import io.github.katrix.katlib.KatPlugin
 import io.github.katrix.katlib.helper.LogHelper
@@ -48,20 +48,9 @@ abstract class ConfigurateBase[A](configDir: Path, name: String, data: Boolean,
 		this(configDir, name, data, identity)
 	}
 
-	protected val path      = {
-		val ending = if(data) ".json" else ".conf"
-		configDir.resolve(s"$name$ending")
-	}
-	protected val cfgLoader = {
-		val builder = customOptions(HoconConfigurationLoader.builder.setPath(path))
-		if(data) {
-			//builder.setRenderOptions(ConfigRenderOptions.concise)
-			builder.setPreservesHeader(false)
-		}
-
-		builder.build()
-	}
-	protected var cfgRoot   = loadRoot()
+	protected val path     : Path                     = configDir.resolve(s"$name${if(data) ".json"else ".conf"}")
+	protected val cfgLoader: HoconConfigurationLoader = customOptions(HoconConfigurationLoader.builder.setPath(path)).build()
+	protected var cfgRoot  : CommentedConfigurationNode = loadRoot()
 
 	{
 		val parent = path.getParent.toFile
@@ -101,15 +90,14 @@ abstract class ConfigurateBase[A](configDir: Path, name: String, data: Boolean,
 		*/
 	protected def saveData(data: A): Unit
 
-	protected def loadRoot(): CommentedConfigurationNode = try {
-		cfgLoader.load
-	}
-	catch {
-		case e: IOException =>
-			LogHelper.error(
-				s"""Could not load configurate file for ${plugin.container.name}.
-						|If this is the first time starting the plugin this is normal""".stripMargin, e)
-			cfgLoader.createEmptyNode()
+	protected def loadRoot(): CommentedConfigurationNode = {
+		Try(cfgLoader.load()).recover {
+			case e: IOException =>
+				LogHelper.error(
+					s"""Could not load configurate file for ${plugin.container.name}.
+						 |If this is the first time starting the plugin this is normal""".stripMargin, e)
+				cfgLoader.createEmptyNode()
+		}.get
 	}
 
 	protected def saveFile(): Future[Unit] = {

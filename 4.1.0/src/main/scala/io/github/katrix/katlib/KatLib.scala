@@ -73,7 +73,7 @@ class KatLib @Inject()(
 			case Some(version) if version != KatLib.CompiledAgainst => LogHelper.warn(
 				s"KatLib is not compiled against $version. KatLib (and plugins depending on it) might break")(this)
 			case None => LogHelper.warn("Could not find API version for Sponge. KatLib (and plugins depending on it) might break")(this)
-			case Some(version) =>
+			case Some(_) =>
 		}
 		Sponge.getCommandManager.register(this, pluginCmd.commandSpec, pluginCmd.aliases: _*)
 	}

@@ -32,8 +32,7 @@ abstract class ConfigLoader[A <: Config](dir: Path)(implicit plugin: KatPlugin) 
 
 		@tailrec
 		def inner(rest: Seq[ConfigValue[_]]): Unit = {
-			if(rest == Nil) {}
-			else {
+			if(rest != Nil) {
 				val value = rest.head
 				value.setNode(cfgRoot)
 				inner(rest.tail)
