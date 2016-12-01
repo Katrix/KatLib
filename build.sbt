@@ -32,11 +32,11 @@ lazy val katLibShared = (project in file("shared"))
 	spongeApiVersion := "4.1.0",
 
 		resolvers += Resolver.url("scalameta", url("http://dl.bintray.com/scalameta/maven"))(Resolver.ivyStylePatterns),
-		addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0.122" cross CrossVersion.full),
+		addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0.132" cross CrossVersion.full),
 		scalacOptions += "-Xplugin-require:macroparadise",
-		scalacOptions in (Compile, console) += "-Yrepl-class-based", // necessary to use console
-		sources in (Compile, doc) := Nil,
-		libraryDependencies += "org.scalameta" %% "scalameta" % "1.3.0.522"
+		scalacOptions in (Compile, console) := Seq(), //macroparadise plugin doesn't work in repl yet.
+		sources in (Compile, doc) := Nil, //macroparadise doesn't work with scaladoc yet.
+		libraryDependencies += "org.scalameta" %% "scalameta" % "1.4.0.544"
 	)
 
 lazy val katLibV410 = (project in file("4.1.0"))

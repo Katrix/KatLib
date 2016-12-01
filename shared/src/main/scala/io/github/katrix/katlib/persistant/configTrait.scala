@@ -6,7 +6,7 @@ import scala.language.experimental.macros
 import scala.meta._
 import scala.meta.dialects.Paradise211
 
-@compileTimeOnly("comment can only be used inside a @configuration trait")
+@compileTimeOnly("@comment can only be used inside a @configuration trait")
 class comment(comment: String) extends StaticAnnotation
 
 @compileTimeOnly("@configuration can only be used on a trait")
@@ -42,14 +42,14 @@ class configuration(name: String) extends StaticAnnotation {
 
 				def getUsedBody(parents: Seq[Term.Name], stat: Stat, innerSections: Seq[(Type.Name, Seq[Stat])]): (Option[Stat], Option[Stat], Seq[Stat]) = {
 
-					def selectNamesLeft(names: Seq[Term.Name]): Term.Ref with Pat = names match {
+					def selectNames(names: Seq[Term.Name]): Term.Ref with Pat = names match {
 						case Seq(first) => q"$first"
 						case Seq(first, second) => q"$first.$second"
 						case Seq(first, second, rest @ _*) => rest.foldLeft(q"$first.$second")((acc, parent) => q"$acc.$parent")
 					}
 
-					def getRefParents(name: Term.Name): Term.Ref with Pat = selectNamesLeft(parents :+ name)
-					def getSelectRoot(name: Term.Name, root: Term.Name): Term.Select = selectNamesLeft(root +: parents :+ name).asInstanceOf[Term.Select]
+					def getRefParents(name: Term.Name): Term.Ref with Pat = selectNames(parents :+ name)
+					def getSelectRoot(name: Term.Name, root: Term.Name): Term.Select = selectNames(root +: parents :+ name).asInstanceOf[Term.Select]
 
 					def createBody(comment: Option[Term.Arg], varName: Pat.Var.Term, tpe: Type, body: Term): (Some[Stat], None.type, Seq[Stat]) = {
 						val name = varName.name
@@ -67,7 +67,7 @@ class configuration(name: String) extends StaticAnnotation {
 							case Some(foundComment) => q"cfgRoot.getNode($nodeName.split('.'): _*).setComment($foundComment).setValue($dataPath)"
 							case None => q"cfgRoot.getNode($nodeName.split('.'): _*).setValue($dataPath)"
 						}
-						val configimpl = q"override val $varName: $tpe = Option(root.getNode($nodeName.split('.'): _*).getValue($typeToken)).getOrElse($defaultPath)"
+						val configimpl = q"override val $varName: $tpe = Option(cfgRoot.getNode($nodeName.split('.'): _*).getValue($typeToken)).getOrElse($defaultPath)"
 
 						(Some(configimpl), None, Seq(save))
 					}
@@ -75,10 +75,10 @@ class configuration(name: String) extends StaticAnnotation {
 					def getTyping(tpe: Option[Type], body: Term): Type = tpe.getOrElse(abort(body.pos, "Could not find type"))
 
 					stat match {
-						case q"@comment($comment) val $name: $tpe = $body" =>
-							createBody(Some(comment), name.asInstanceOf[Pat.Var.Term], getTyping(tpe.asInstanceOf[Option[Type]], body), body)
-						case q"val $name: $tpe = $body" =>
-							createBody(None, name.asInstanceOf[Pat.Var.Term], getTyping(tpe.asInstanceOf[Option[Type]], body), body)
+						case q"@comment($comment) val ${name: Pat.Var.Term}: $tpe = $body" =>
+							createBody(Some(comment), name, getTyping(tpe.asInstanceOf[Option[Type]], body), body)
+						case q"val ${name: Pat.Var.Term}: $tpe = $body" =>
+							createBody(None, name, getTyping(tpe.asInstanceOf[Option[Type]], body), body)
 						case q"val $name: $tpe" if innerSections.exists(_._1.structure == tpe.structure) => //Yuck
 							val (traitName, traitBody) = innerSections.find(_._1.structure == tpe.structure).get
 							createTraitBody(name, traitName, traitBody, parents)
@@ -89,7 +89,7 @@ class configuration(name: String) extends StaticAnnotation {
 
 				def stripComment(tree: Stat): Stat = {
 					tree match {
-						case q"@comment($_) val $name: $tpe = $body" => q"val ${name.asInstanceOf[Pat.Var.Term]}: $tpe = $body"
+						case q"@comment($_) val ${name: Pat.Var.Term}: $tpe = $body" => q"val $name: $tpe = $body"
 						case q"trait $name {..$body}" =>
 							val strippedBody = body.map(stripComment)
 							q"trait $name {..$strippedBody }"
@@ -120,15 +120,13 @@ class configuration(name: String) extends StaticAnnotation {
 			 				..${implDefaultBody.flatten}
 		 				}
 
-						def configImpl(root: ConfigurationNode) = new $ctorTraitName {
-							..${implConfigBody.flatten}
-						}
-
 			 			def loader(dir: Path, configBuilder: Path => HoconLoader)(
 			 					implicit plugin: KatPlugin): ConfigurateBase[$traitName, CommentedConfigurationNode, HoconLoader] = {
 			 				new ConfigurateBase[$traitName, CommentedConfigurationNode, HoconLoader](dir, $configName, configBuilder) {
 
-								override def loadData: $traitName = configImpl(cfgRoot)
+								override def loadData: $traitName = new $ctorTraitName {
+									..${implConfigBody.flatten}
+								}
 
 								override def saveData(data: $traitName): Unit = {
 			 						..${saveBody.flatten}
