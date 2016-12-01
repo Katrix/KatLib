@@ -49,9 +49,9 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Co
 		val head = seq.head
 
 		seq.tail.foldLeft(head.aliases.map(str => str -> head))((acc, cmd) => for {
-				(str, newCmd) <- acc
-				cmdName <- cmd.aliases
-			} yield s"$cmdName $str" -> newCmd)
+			(str, newCmd) <- acc
+			cmdName <- cmd.aliases
+		} yield s"$cmdName $str" -> newCmd)
 	}).toMap
 
 	def execute(src: CommandSource, args: CommandContext): CommandResult = {

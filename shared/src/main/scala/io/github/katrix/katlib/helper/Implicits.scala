@@ -31,11 +31,8 @@ import scala.util.Try
 
 import org.slf4j.Logger
 import org.spongepowered.api.asset.Asset
-import org.spongepowered.api.data.manipulator.{DataManipulator, DataManipulatorBuilder, ImmutableDataManipulator}
 import org.spongepowered.api.data.persistence.{DataBuilder, DataContentUpdater}
-import org.spongepowered.api.data.value.ValueContainer
-import org.spongepowered.api.data.value.mutable.CompositeValueStore
-import org.spongepowered.api.data.{DataManager, DataSerializable, DataTransactionResult, DataView, ImmutableDataBuilder, ImmutableDataHolder}
+import org.spongepowered.api.data.{DataManager, DataSerializable, DataView, ImmutableDataBuilder, ImmutableDataHolder}
 import org.spongepowered.api.plugin.{PluginContainer => SpongePluginContainer}
 import org.spongepowered.api.service.{ProviderRegistration, ServiceManager}
 import org.spongepowered.api.text.format.{TextColor, TextColors, TextStyle}
@@ -180,27 +177,6 @@ object Implicits {
 		}
 	}
 
-	/*
-	implicit class RichCompositeValueStore[S <: CompositeValueStore[S, H], H <: ValueContainer[_]](val compositeValueStore: CompositeValueStore[S, H]) extends AnyVal {
-
-		def get[A <: H : ClassTag]: Option[A] = {
-			compositeValueStore.get(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
-		}
-
-		def getOrCreate[A <: H : ClassTag]: Option[A] = {
-			compositeValueStore.getOrCreate(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
-		}
-
-		def supports[A <: H : ClassTag]: Boolean = {
-			compositeValueStore.supports(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
-		}
-
-		def remove[A <: H : ClassTag]: DataTransactionResult = {
-			compositeValueStore.remove(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
-		}
-	}
-	*/
-
 	implicit class RichDataManager(val dataManager: DataManager) extends AnyVal {
 
 		def registerBuilder[A <: DataSerializable : ClassTag](builder: DataBuilder[A]): Unit = {
@@ -234,12 +210,13 @@ object Implicits {
 
 	implicit class RichServiceManager(val serviceManager: ServiceManager) extends AnyVal {
 
-		def provide[A : ClassTag]: Option[A] = serviceManager.provide(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
-		def provideTry[A : ClassTag]: Try[A] = Try(serviceManager.provideUnchecked(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]))
+		def provide[A: ClassTag]: Option[A] = serviceManager.provide(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+		def provideTry[A: ClassTag]: Try[A] = Try(serviceManager.provideUnchecked(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]))
+		def provideUnchecked[A: ClassTag]: A = serviceManager.provideUnchecked(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
 
-		def isRegistered[A : ClassTag]: Boolean = serviceManager.isRegistered(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
+		def isRegistered[A: ClassTag]: Boolean = serviceManager.isRegistered(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
 
-		def getRegistration[A : ClassTag]: Option[ProviderRegistration[A]] = {
+		def getRegistration[A: ClassTag]: Option[ProviderRegistration[A]] = {
 			serviceManager.getRegistration(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
 		}
 	}

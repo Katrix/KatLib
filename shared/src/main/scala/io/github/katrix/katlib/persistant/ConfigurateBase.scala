@@ -36,7 +36,7 @@ abstract class ConfigurateBase[A, NodeType <: ConfigurationNode, LoaderType <: C
 
 	protected val path     : Path       = configDir.resolve(name)
 	protected val cfgLoader: LoaderType = pathToLoader(path)
-	protected var cfgRoot  : NodeType = loadRoot()
+	protected var cfgRoot  : NodeType   = loadRoot()
 
 	protected def loadRoot(): NodeType = {
 		Try(cfgLoader.load()).recover {

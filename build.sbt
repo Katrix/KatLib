@@ -17,7 +17,7 @@ lazy val commonSettings = Seq(
 		dependencies = Set(DependencyInfo("spongeapi", Some(spongeApiVersion.value)))
 	),
 
-	artifactName := { (sv, module, artifact) => s"​${artifact.name}-${module.revision}.${artifact.extension}"},
+	artifactName := { (sv, module, artifact) => s"​${artifact.name}-${module.revision}.${artifact.extension}" },
 	assemblyJarName <<= (name, version) map { (name, version) => s"​$name-assembly-$version.jar" }
 )
 
@@ -25,11 +25,11 @@ lazy val katLibShared = (project in file("shared"))
 	.enablePlugins(SpongePlugin)
 	.settings(commonSettings: _*)
 	.settings(
-	name := "KatLib-Shared",
-	assembleArtifact := false,
-	spongeMetaCreate := false,
-	//Default version, needs to build correctly against all supported versions
-	spongeApiVersion := "4.1.0",
+		name := "KatLib-Shared",
+		assembleArtifact := false,
+		spongeMetaCreate := false,
+		//Default version, needs to build correctly against all supported versions
+		spongeApiVersion := "4.1.0",
 		libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
 	)
 
