@@ -1,7 +1,6 @@
 package io.github.katrix.katlib.persistant
 
-@configTrait("test")
-trait ConfigAnnotationTest {
+@configuration("test") trait ConfigAnnotationTest {
 
 	@comment("a simple int")       val simple  : Int      = 5
 	@comment("a sequence of ints") val sequence: Seq[Int] = Seq(1, 2, 3)
@@ -25,9 +24,4 @@ trait ConfigAnnotationTest {
 			}
 		}
 	}
-}
-
-object ConfigUser {
-
-	println(ConfigAnnotationTest.DefaultConfig.nested1.nested2.nested3.nested4.nested4Obj)
 }

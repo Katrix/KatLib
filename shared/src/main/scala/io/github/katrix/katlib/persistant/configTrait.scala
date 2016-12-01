@@ -6,11 +6,11 @@ import scala.language.experimental.macros
 import scala.meta._
 import scala.meta.dialects.Paradise211
 
-@compileTimeOnly("comment can only be used inside a @configTrait trait")
+@compileTimeOnly("comment can only be used inside a @configuration trait")
 class comment(comment: String) extends StaticAnnotation
 
-@compileTimeOnly("@configTrait can only be used on a trait")
-class configTrait(name: String) extends StaticAnnotation {
+@compileTimeOnly("@configuration can only be used on a trait")
+class configuration(name: String) extends StaticAnnotation {
 
 	inline def apply(defn: Any): Any = meta {
 
