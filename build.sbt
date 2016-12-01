@@ -17,7 +17,9 @@ lazy val commonSettings = Seq(
 		dependencies = Set(DependencyInfo("spongeapi", Some(spongeApiVersion.value)))
 	),
 
-	artifactName := { (sv, module, artifact) => s"​${artifact.name}-${module.revision}.${artifact.extension}" },
+	libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.2",
+
+	artifactName := { (sv, module, artifact) => s"​${artifact.name}-${module.revision}.${artifact.extension}"},
 	assemblyJarName <<= (name, version) map { (name, version) => s"​$name-assembly-$version.jar" }
 )
 
