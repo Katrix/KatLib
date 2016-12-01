@@ -29,7 +29,6 @@ import org.spongepowered.api.event.Listener
 import org.spongepowered.api.event.game.state.{GameConstructionEvent, GameInitializationEvent}
 import org.spongepowered.api.plugin.{Plugin, PluginContainer}
 
-import com.google.common.reflect.TypeToken
 import com.google.inject.Inject
 
 import io.github.katrix.katlib.helper.Implicits.RichOptional
@@ -50,16 +49,15 @@ object KatLib {
 
 @Plugin(id = LibKatLibPlugin.Id, name = LibKatLibPlugin.Name, version = KatLib.ConstantVersion, authors = Array("Katrix"))
 class KatLib @Inject()(
-	logger: Logger,
-	@ConfigDir(sharedRoot = true)
-	configDir: Path,
-	container: PluginContainer
+		logger: Logger,
+		@ConfigDir(sharedRoot = true)
+		configDir: Path,
+		container: PluginContainer
 ) extends ImplKatPlugin(logger, configDir, container, LibKatLibPlugin.Id) {
 
 	//Not actually used so far
 	override def config: Config = new Config {
-		override def seq: Seq[CommentedConfigValue[_]] = Seq(version)
-		override val version: CommentedConfigValue[String] = CommentedConfigValue("0", TypeToken.of(classOf[String]), "Don't touch this", Seq("version"))
+		override def seq: Seq[CommentedConfigValue[_]] = Seq()
 	}
 
 	@Listener

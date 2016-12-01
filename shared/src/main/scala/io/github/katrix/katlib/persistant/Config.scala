@@ -24,8 +24,6 @@ import com.google.common.reflect.TypeToken
 
 abstract class Config {
 
-	val version: CommentedConfigValue[String]
-
 	/**
 		* Gets a config value with the same path as it is saved with
 		*/
