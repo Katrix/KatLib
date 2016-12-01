@@ -14,7 +14,11 @@ class configuration(name: String) extends StaticAnnotation {
 
 	inline def apply(defn: Any): Any = meta {
 
-		val configName = arg""""TODO.conf""""
+		val configName = this match {
+			case q"new $_(${arg @ Lit(name: String)})" if name.contains(".") => arg
+			case q"new $_($_)" => abort("Name needs to have an extension")
+			case _ => abort("@configuration needs a name")
+		}
 
 		val res = defn match {
 			case q"trait $traitName {..$traitBody}" =>
