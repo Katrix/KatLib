@@ -26,6 +26,7 @@ import java.util.Optional
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
+import scala.reflect.macros.blackbox
 import scala.util.Try
 
 import org.slf4j.Logger
@@ -108,7 +109,23 @@ object Implicits {
 		def logger: Logger = container.getLogger
 	}
 
-	implicit def typeToken[A: ClassTag]: TypeToken[A] = TypeToken.of(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
+	implicit def typeToken[A]: TypeToken[A] = macro typeTokenImpl[A]
+	def typeTokenImpl[A: c.WeakTypeTag](c: blackbox.Context): c.Expr[TypeToken[A]] = {
+		import c.universe._
+		val tpe = implicitly[c.WeakTypeTag[A]].tpe
+		if(tpe.takesTypeArgs) {
+			c.abort(tpe.typeSymbol.pos, "The type must be concrete")
+		}
+
+		val tree = if(tpe.etaExpand.typeParams.nonEmpty) {
+			q"new com.google.common.reflect.TypeToken[$tpe] {}"
+		}
+		else {
+			q"com.google.common.reflect.TypeToken.of(classOf[$tpe])"
+		}
+
+		c.Expr[TypeToken[A]](tree)
+	}
 
 	implicit class RichConfigurationNode(val node: ConfigurationNode) extends AnyVal {
 

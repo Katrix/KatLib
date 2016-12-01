@@ -29,7 +29,8 @@ lazy val katLibShared = (project in file("shared"))
 	assembleArtifact := false,
 	spongeMetaCreate := false,
 	//Default version, needs to build correctly against all supported versions
-	spongeApiVersion := "4.1.0"
+	spongeApiVersion := "4.1.0",
+		libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
 	)
 
 lazy val katLibV410 = (project in file("4.1.0"))
