@@ -14,7 +14,7 @@ class configuration(name: String) extends StaticAnnotation {
 
 	inline def apply(defn: Any): Any = meta {
 
-		val configName = arg""""TODO""""
+		val configName = arg""""TODO.conf""""
 
 		val res = defn match {
 			case q"trait $traitName {..$traitBody}" =>
@@ -105,7 +105,8 @@ class configuration(name: String) extends StaticAnnotation {
 
 					object $objTraitName {
 						import _root_.ninja.leaping.configurate.ConfigurationNode
-						import _root_.ninja.leaping.configurate.hocon.{HoconConfigurationLoader => HoconBuilder}
+						import _root_.ninja.leaping.configurate.commented.CommentedConfigurationNode
+						import _root_.ninja.leaping.configurate.hocon.{HoconConfigurationLoader => HoconLoader}
 						import _root_.io.github.katrix.katlib.persistant.ConfigurateBase
 						import _root_.io.github.katrix.katlib.KatPlugin
 						import _root_.java.nio.file.Path
@@ -119,24 +120,21 @@ class configuration(name: String) extends StaticAnnotation {
 							..${implConfigBody.flatten}
 						}
 
-			 			def loader(dir: Path, customOptions: HoconBuilder => HoconBuilder)(implicit plugin: KatPlugin): ConfigurateBase[$traitName] = {
-			 				new ConfigurateBase[$traitName](dir, $configName, false) {
+			 			def loader(dir: Path, configBuilder: Path => HoconLoader)(
+			 					implicit plugin: KatPlugin): ConfigurateBase[$traitName, CommentedConfigurationNode, HoconLoader] = {
+			 				new ConfigurateBase[$traitName, CommentedConfigurationNode, HoconLoader](dir, $configName, configBuilder) {
 
-								override def loadVersionedData(version: String): $traitName = version match {
-			 						case "undefined" => configImpl(cfgRoot)
-				 					case _ => throw new IllegalStateException
-								}
+								override def loadData: $traitName = configImpl(cfgRoot)
 
 								override def saveData(data: $traitName): Unit = {
 			 						..${saveBody.flatten}
+									saveFile()
 								}
-
-								override protected val default = DefaultConfig
 			 				}
 			 			}
 					}
 				 """
-			case _ => abort("@configTrait can only be used on a trait")
+			case _ => abort("@configuration can only be used on a trait")
 		}
 
 		println(res.syntax)
