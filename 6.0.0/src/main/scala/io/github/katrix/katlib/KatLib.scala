@@ -30,7 +30,6 @@ import org.spongepowered.api.event.Listener
 import org.spongepowered.api.event.game.state.{GameConstructionEvent, GameInitializationEvent}
 import org.spongepowered.api.plugin.{Plugin, PluginContainer}
 
-import com.google.common.reflect.TypeToken
 import com.google.inject.Inject
 
 import io.github.katrix.katlib.helper.Implicits.RichOptional

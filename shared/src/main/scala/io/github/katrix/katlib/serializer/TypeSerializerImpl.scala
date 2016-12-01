@@ -1,6 +1,5 @@
 package io.github.katrix.katlib.serializer
 
-import java.io.IOException
 import java.lang.{Byte => JByte, Double => JDouble, Float => JFloat, Integer => JInt, Long => JLong, Short => JShort}
 
 import scala.collection.JavaConverters._

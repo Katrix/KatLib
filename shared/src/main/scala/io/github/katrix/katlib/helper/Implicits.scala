@@ -25,6 +25,7 @@ import java.util.Optional
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
+import scala.language.experimental.macros
 import scala.reflect.ClassTag
 import scala.reflect.macros.blackbox
 import scala.util.Try
@@ -78,16 +79,6 @@ object Implicits {
 			option match {
 				case Some(value) => Optional.of(value)
 				case None => Optional.empty()
-			}
-		}
-	}
-
-	implicit class Castable(val obj: AnyRef) extends AnyVal {
-
-		def asInstanceOfOpt[T <: AnyRef : ClassTag]: Option[T] = {
-			obj match {
-				case t: T => Some(t)
-				case _ => None
 			}
 		}
 	}

@@ -1,6 +1,5 @@
 package io.github.katrix.katlib.serializer
 
-import scala.language.higherKinds
 import scala.util.{Success, Try}
 
 import shapeless._

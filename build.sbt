@@ -4,9 +4,18 @@ lazy val commonSettings = Seq(
 	version := "1.1.0",
 	scalaVersion := "2.12.0",
 	assemblyShadeRules in assembly := Seq(
-		ShadeRule.rename("scala.**" -> "io.github.katrix.katlib.shade.scala.@1").inAll
+		ShadeRule.rename("scala.**" -> "io.github.katrix.katlib.shade.scala.@1").inAll,
+		ShadeRule.rename("shapeless.**" -> "io.github.katrix.katlib.shade.shapeless.@1").inAll
 	),
-	scalacOptions += "-Xexperimental",
+	scalacOptions ++= Seq(
+		"-deprecation",
+		"-feature",
+		"-unchecked",
+		"-Xlint",
+		"-Yno-adapted-args",
+		"-Ywarn-dead-code",
+		"-Ywarn-unused-import"
+	),
 	crossPaths := false,
 
 	spongePluginInfo := spongePluginInfo.value.copy(
