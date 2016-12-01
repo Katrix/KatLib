@@ -86,7 +86,7 @@ object Implicits {
 
 	implicit class Castable(val obj: AnyRef) extends AnyVal {
 
-		def asInstanceOfOpt[T <: AnyRef : ClassTag] = {
+		def asInstanceOfOpt[T <: AnyRef : ClassTag]: Option[T] = {
 			obj match {
 				case t: T => Some(t)
 				case _ => None
@@ -102,7 +102,6 @@ object Implicits {
 		def description: Option[String] = container.getDescription.toOption
 		def url: Option[String] = container.getUrl.toOption
 		def authors: Seq[String] = container.getAuthors.asScala
-		def assetDirectory: Option[Path] = container.getAssetDirectory.toOption
 		def getAsset(name: String): Option[Asset] = container.getAsset(name).toOption
 		def sources: Option[Path] = container.getSource.toOption
 		def instance: Option[_] = container.getInstance().toOption

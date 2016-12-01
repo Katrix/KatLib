@@ -22,6 +22,7 @@ package io.github.katrix.katlib.command
 
 import org.spongepowered.api.command.CommandException
 import org.spongepowered.api.command.spec.{CommandExecutor, CommandSpec}
+import org.spongepowered.api.text.format.TextColors._
 
 import io.github.katrix.katlib.KatPlugin
 import io.github.katrix.katlib.helper.Implicits._
@@ -35,7 +36,7 @@ abstract class CommandBase(val parent: Option[CommandBase])(implicit plugin: Kat
 	def children: Seq[CommandBase] = Nil
 
 	def registerHelp(): Unit = {
-		plugin.pluginCmd.CmdHelp.registerCommandHelp(this)
+		plugin.pluginCmd.cmdHelp.registerCommandHelp(this)
 		children.foreach(_.registerHelp())
 	}
 
@@ -52,12 +53,12 @@ abstract class CommandBase(val parent: Option[CommandBase])(implicit plugin: Kat
 
 object CommandBase {
 
-	def nonPlayerError: CommandException = new CommandException("Only players can use this command".richText.error())
+	def nonPlayerError: CommandException = new CommandException(t"${RED}Only players can use this command")
 	def playerNotFoundError: CommandException = notFoundError("A player", "with that name")
 
-	def notFoundError(notFound: String, lookFor: String): CommandException = new CommandException(s"$notFound $lookFor was not found".richText.error())
+	def notFoundError(notFound: String, lookFor: String): CommandException = new CommandException(t"$RED$notFound $lookFor was not found")
 
-	def invalidParameterError: CommandException = new CommandException("Invalid parameter".richText.error())
+	def invalidParameterError: CommandException = new CommandException(t"${RED}Invalid parameter")
 
 	implicit class RichCommandSpecBuilder(val builder: CommandSpec.Builder) extends AnyVal {
 

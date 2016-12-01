@@ -35,7 +35,7 @@ import com.google.inject.Inject
 import io.github.katrix.katlib.helper.Implicits.RichOptional
 import io.github.katrix.katlib.helper.LogHelper
 import io.github.katrix.katlib.lib.LibKatLibPlugin
-import io.github.katrix.katlib.persistant.{Config, ConfigValue}
+import io.github.katrix.katlib.persistant.{CommentedConfigValue, Config}
 
 object KatLib {
 
@@ -58,8 +58,8 @@ class KatLib @Inject()(
 
 	//Not actually used so far
 	override def config: Config = new Config {
-		override def seq: Seq[ConfigValue[_]] = Seq(version)
-		override val version: ConfigValue[String] = ConfigValue("0", TypeToken.of(classOf[String]), "Don't touch this", Seq("version"))
+		override def seq: Seq[CommentedConfigValue[_]] = Seq(version)
+		override val version: CommentedConfigValue[String] = CommentedConfigValue("0", TypeToken.of(classOf[String]), "Don't touch this", Seq("version"))
 	}
 
 	@Listener
@@ -73,7 +73,7 @@ class KatLib @Inject()(
 			case Some(version) if version != KatLib.CompiledAgainst => LogHelper.warn(
 				s"KatLib is not compiled against $version. KatLib (and plugins depending on it) might break")(this)
 			case None => LogHelper.warn("Could not find API version for Sponge. KatLib (and plugins depending on it) might break")(this)
-			case Some(version) =>
+			case Some(_) =>
 		}
 		Sponge.getCommandManager.register(this, pluginCmd.commandSpec, pluginCmd.aliases: _*)
 	}

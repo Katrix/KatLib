@@ -31,28 +31,28 @@ import io.github.katrix.katlib.helper.Implicits._
 
 final class CmdPlugin(implicit plugin: KatPlugin) extends CommandBase(None) {
 
-	val CmdHelp = new CmdHelp(this)
+	val cmdHelp = new CmdHelp(this)
 
 	override def execute(src: CommandSource, args: CommandContext): CommandResult = {
 		val container = plugin.container
 		val text = Text.builder(container.name).color(TextColors.YELLOW)
-		container.version.foreach(version => text.append(s" v.$version".text))
-		container.description.foreach(description => text.append(s"\n$description".text))
-		container.url.foreach(url => text.append(s"\n$url".text))
-		if(container.authors.nonEmpty) text.append(s"Created by: ${container.authors.mkString(", ")}".text)
+		container.version.foreach(version => text.append(t" v.$version"))
+		container.description.foreach(description => text.append(t"\n$description"))
+		container.url.foreach(url => text.append(t"\n$url"))
+		if(container.authors.nonEmpty) text.append(t"Created by: ${container.authors.mkString(", ")}")
 
 		src.sendMessage(text.build())
 		CommandResult.success()
 	}
 
 	override def commandSpec: CommandSpec = CommandSpec.builder()
-		.description(s"Shows some information about ${plugin.container.name}".text)
+		.description(t"Shows some information about ${plugin.container.name}")
 		.executor(this)
 		.permission(s"${plugin.container.id}.info")
 		.children(this)
 		.build()
 
-	override def children: Seq[CommandBase] = Seq(CmdHelp)
+	override def children: Seq[CommandBase] = Seq(cmdHelp)
 
 	override def aliases: Seq[String] = Seq(s"${plugin.container.id}", s"${plugin.container.name}")
 }
