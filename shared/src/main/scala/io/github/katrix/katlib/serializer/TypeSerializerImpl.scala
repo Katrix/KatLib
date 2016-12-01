@@ -1,9 +1,12 @@
 package io.github.katrix.katlib.serializer
 
 import java.io.IOException
+import java.lang.{Byte => JByte, Double => JDouble, Float => JFloat, Integer => JInt, Long => JLong, Short => JShort}
 
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
+
+import org.apache.commons.lang3.math.NumberUtils
 
 import com.google.common.reflect.TypeToken
 
@@ -35,12 +38,14 @@ object TypeSerializerImpl {
 		override def readList[A: ConfigSerializer]: Try[Seq[A]] = {
 			def useMap: Try[Seq[A]] = read[Map[Int, A]].map(_.toSeq.sortBy(_._1).map(_._2))
 
+			//TODO: Figure out how to check if the node supports lists
+			/*
 			implicitly[ConfigSerializer[A]].shouldBypass match {
-				case Some(clazz) => Try(node.getList[A](TypeToken.of(clazz)).asScala).recoverWith {
-					case _: IOException => useMap
-				}
+				case Some(clazz) => useMap
 				case None => useMap
 			}
+			*/
+			useMap
 		}
 
 		override def write[A: ConfigSerializer](value: A): ConfigNode = {
@@ -55,16 +60,16 @@ object TypeSerializerImpl {
 		def writeValue[A](value: A, typeToken: TypeToken[A]): ConfigNode = node.setValue(typeToken, value)
 
 		override def writeList[A: ConfigSerializer](value: Seq[A]): ConfigNode = {
-			def useMap: ConfigNode = {
-				write[Map[Int, A]](value.zipWithIndex.map(_.swap).toMap)
-			}
+			def useMap: ConfigNode = write[Map[Int, A]](value.zipWithIndex.map(_.swap).toMap)
 
+			//TODO: Figure out how to check if the node supports lists
+			/*
 			implicitly[ConfigSerializer[A]].shouldBypass match {
-				case Some(clazz) =>
-					//writeValue(value.asJava, new TypeToken[JList[A]]() {} where(new TypeParameter[A] {}, clazz)) //How to know if a normal list can be used?
-					useMap
+				case Some(clazz) => useMap
 				case None => useMap
 			}
+			*/
+			useMap
 		}
 	}
 
@@ -94,7 +99,30 @@ object TypeSerializerImpl {
 	}
 
 	implicit def stringMapSerializer[A: ConfigSerializer]: ConfigSerializer[Map[String, A]] = mapSerializer[String, A] { case str: String => str }
-	implicit def intMapSerializer[A: ConfigSerializer]: ConfigSerializer[Map[Int, A]] = mapSerializer[Int, A] { case int: Integer => int.intValue() }
+	implicit def byteMapSerializer[A: ConfigSerializer]: ConfigSerializer[Map[Byte, A]] = mapSerializer[Byte, A] {
+		case int: JByte => int.byteValue()
+		case str: String if NumberUtils.isNumber(str) => str.toByte
+	}
+	implicit def shortMapSerializer[A: ConfigSerializer]: ConfigSerializer[Map[Short, A]] = mapSerializer[Short, A] {
+		case int: JShort => int.shortValue()
+		case str: String if NumberUtils.isNumber(str) => str.toShort
+	}
+	implicit def intMapSerializer[A: ConfigSerializer]: ConfigSerializer[Map[Int, A]] = mapSerializer[Int, A] {
+		case int: JInt => int.intValue()
+		case str: String if NumberUtils.isNumber(str) => str.toInt
+	}
+	implicit def longMapSerializer[A: ConfigSerializer]: ConfigSerializer[Map[Long, A]] = mapSerializer[Long, A] {
+		case int: JLong => int.longValue()
+		case str: String if NumberUtils.isNumber(str) => str.toLong
+	}
+	implicit def floatMapSerializer[A: ConfigSerializer]: ConfigSerializer[Map[Float, A]] = mapSerializer[Float, A] {
+		case int: JFloat => int.floatValue()
+		case str: String if NumberUtils.isNumber(str) => str.toFloat
+	}
+	implicit def doubleMapSerializer[A: ConfigSerializer]: ConfigSerializer[Map[Double, A]] = mapSerializer[Double, A] {
+		case int: JDouble => int.doubleValue()
+		case str: String if NumberUtils.isNumber(str) => str.toDouble
+	}
 
 	def fromTypeSerializer[A](typeSerializer: TypeSerializer[A], clazz: Class[A]): ConfigSerializer[A] = new ConfigSerializer[A] {
 		private val typeToken = TypeToken.of(clazz)

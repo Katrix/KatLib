@@ -37,8 +37,8 @@ object ConfigSerializerBase {
 
 		private def primitiveSerializer[A](clazz: Class[A]) = new ConfigSerializer[A] {
 			override def shouldBypass: Option[Class[A]] = Some(clazz)
-			override def write(obj: A, value: ConfigNode): ConfigNode = value.write(obj)(this)
-			override def read(value: ConfigNode): Try[A] = value.read(this)
+			override def write(obj: A, node: ConfigNode): ConfigNode = node.write(obj)(this)
+			override def read(node: ConfigNode): Try[A] = node.read(this)
 		}
 
 		implicit val booleanSerializer: ConfigSerializer[Boolean] = primitiveSerializer(classOf[Boolean])
@@ -51,8 +51,8 @@ object ConfigSerializerBase {
 		implicit val stringSerializer : ConfigSerializer[String]  = primitiveSerializer(classOf[String])
 
 		implicit def seqSerializer[A: ConfigSerializer] = new ConfigSerializer[Seq[A]] {
-			override def write(obj: Seq[A], value: ConfigNode): ConfigNode = value.writeList(obj)
-			override def read(value: ConfigNode): Try[Seq[A]] = value.readList[A]
+			override def write(obj: Seq[A], node: ConfigNode): ConfigNode = node.writeList(obj)
+			override def read(node: ConfigNode): Try[Seq[A]] = node.readList[A]
 		}
 	}
 
