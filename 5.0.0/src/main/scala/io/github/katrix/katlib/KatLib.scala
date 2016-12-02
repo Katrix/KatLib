@@ -39,8 +39,8 @@ import io.github.katrix.katlib.persistant.{CommentedConfigValue, Config}
 object KatLib {
 
 	final val CompiledAgainst = "5.0.0"
-	final val Version         = s"$CompiledAgainst-1.1.0"
-	final val ConstantVersion = "5.0.0-1.1.0"
+	final val Version         = s"$CompiledAgainst-2.0.0"
+	final val ConstantVersion = "5.0.0-2.0.0"
 	assert(Version == ConstantVersion)
 
 	private var _plugin: KatLib = _
@@ -53,7 +53,7 @@ class KatLib @Inject()(
 		@ConfigDir(sharedRoot = true)
 		configDir: Path,
 		container: PluginContainer
-) extends ImplKatPlugin(logger, configDir, container, LibKatLibPlugin.Id) {
+) extends ImplKatPlugin(logger, configDir, container) {
 
 	//Not actually used so far
 	override def config: Config = new Config {
