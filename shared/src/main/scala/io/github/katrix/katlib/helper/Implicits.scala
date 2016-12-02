@@ -97,23 +97,7 @@ object Implicits {
 		def logger: Logger = container.getLogger
 	}
 
-	implicit def typeToken[A]: TypeToken[A] = macro typeTokenImpl[A]
-	def typeTokenImpl[A: c.WeakTypeTag](c: blackbox.Context): c.Expr[TypeToken[A]] = {
-		import c.universe._
-		val tpe = implicitly[c.WeakTypeTag[A]].tpe
-		if(tpe.takesTypeArgs) {
-			c.abort(tpe.typeSymbol.pos, "The type must be concrete")
-		}
-
-		val tree = if(tpe.etaExpand.typeParams.nonEmpty) {
-			q"new com.google.common.reflect.TypeToken[$tpe] {}"
-		}
-		else {
-			q"com.google.common.reflect.TypeToken.of(classOf[$tpe])"
-		}
-
-		c.Expr[TypeToken[A]](tree)
-	}
+	implicit def typeToken[A]: TypeToken[A] = macro MacroImpl.typeToken[A]
 
 	implicit class RichConfigurationNode(val node: ConfigurationNode) extends AnyVal {
 
@@ -211,4 +195,25 @@ object Implicits {
 			serviceManager.getRegistration(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
 		}
 	}
+}
+
+class MacroImpl(val c: blackbox.Context) {
+	import c.universe._
+
+	def typeToken[A: c.WeakTypeTag]: c.Expr[TypeToken[A]] = {
+		val tpe = implicitly[c.WeakTypeTag[A]].tpe
+		if(tpe.takesTypeArgs) {
+			c.abort(tpe.typeSymbol.pos, "The type must be concrete")
+		}
+
+		val tree = if(tpe.etaExpand.typeParams.nonEmpty) {
+			q"new com.google.common.reflect.TypeToken[$tpe] {}"
+		}
+		else {
+			q"com.google.common.reflect.TypeToken.of(classOf[$tpe])"
+		}
+
+		c.Expr[TypeToken[A]](tree)
+	}
+
 }

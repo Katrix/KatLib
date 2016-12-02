@@ -1,5 +1,7 @@
+def removeSnapshot(str: String): String = if(str.endsWith("-SNAPSHOT")) str.substring(0, str.length - 9) else str
+
 lazy val commonSettings = Seq(
-	name := s"KatLib-${spongeApiVersion.value}",
+	name := s"KatLib-${removeSnapshot(spongeApiVersion.value)}",
 	organization := "io.github.katrix",
 	version := "2.0.0",
 	scalaVersion := "2.12.0",
@@ -21,12 +23,12 @@ lazy val commonSettings = Seq(
 	spongePluginInfo := spongePluginInfo.value.copy(
 		id = "katlib",
 		name = Some("KatLib"),
-		version = Some(s"${spongeApiVersion.value}-${version.value}"),
+		version = Some(s"${removeSnapshot(spongeApiVersion.value)}-${version.value}"),
 		authors = Seq("Katrix"),
-		dependencies = Set(DependencyInfo("spongeapi", Some(spongeApiVersion.value)))
+		dependencies = Set(DependencyInfo("spongeapi", Some(removeSnapshot(spongeApiVersion.value))))
 	),
 
-	libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.2",
+	libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.2" exclude("org.typelevel", "macro-compat_2.12"), //Don't think macro-compat needs to be in the jar
 
 	artifactName := { (sv, module, artifact) => s"​${artifact.name}-${module.revision}.${artifact.extension}"},
 	assemblyJarName <<= (name, version) map { (name, version) => s"​$name-assembly-$version.jar" }
