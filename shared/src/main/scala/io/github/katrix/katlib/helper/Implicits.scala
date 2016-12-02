@@ -25,16 +25,15 @@ import java.util.Optional
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
+import scala.language.experimental.macros
 import scala.reflect.ClassTag
+import scala.reflect.macros.blackbox
 import scala.util.Try
 
 import org.slf4j.Logger
 import org.spongepowered.api.asset.Asset
-import org.spongepowered.api.data.manipulator.{DataManipulator, DataManipulatorBuilder, ImmutableDataManipulator}
 import org.spongepowered.api.data.persistence.{DataBuilder, DataContentUpdater}
-import org.spongepowered.api.data.value.ValueContainer
-import org.spongepowered.api.data.value.mutable.CompositeValueStore
-import org.spongepowered.api.data.{DataManager, DataSerializable, DataTransactionResult, DataView, ImmutableDataBuilder, ImmutableDataHolder}
+import org.spongepowered.api.data.{DataManager, DataSerializable, DataView, ImmutableDataBuilder, ImmutableDataHolder}
 import org.spongepowered.api.plugin.{PluginContainer => SpongePluginContainer}
 import org.spongepowered.api.service.{ProviderRegistration, ServiceManager}
 import org.spongepowered.api.text.format.{TextColor, TextColors, TextStyle}
@@ -84,16 +83,6 @@ object Implicits {
 		}
 	}
 
-	implicit class Castable(val obj: AnyRef) extends AnyVal {
-
-		def asInstanceOfOpt[T <: AnyRef : ClassTag] = {
-			obj match {
-				case t: T => Some(t)
-				case _ => None
-			}
-		}
-	}
-
 	implicit class PluginContainer(val container: SpongePluginContainer) extends AnyVal {
 
 		def id: String = container.getId
@@ -102,14 +91,13 @@ object Implicits {
 		def description: Option[String] = container.getDescription.toOption
 		def url: Option[String] = container.getUrl.toOption
 		def authors: Seq[String] = container.getAuthors.asScala
-		def assetDirectory: Option[Path] = container.getAssetDirectory.toOption
 		def getAsset(name: String): Option[Asset] = container.getAsset(name).toOption
 		def sources: Option[Path] = container.getSource.toOption
 		def instance: Option[_] = container.getInstance().toOption
 		def logger: Logger = container.getLogger
 	}
 
-	implicit def typeToken[A: ClassTag]: TypeToken[A] = TypeToken.of(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
+	implicit def typeToken[A]: TypeToken[A] = macro MacroImpl.typeToken[A]
 
 	implicit class RichConfigurationNode(val node: ConfigurationNode) extends AnyVal {
 
@@ -164,27 +152,6 @@ object Implicits {
 		}
 	}
 
-	/*
-	implicit class RichCompositeValueStore[S <: CompositeValueStore[S, H], H <: ValueContainer[_]](val compositeValueStore: CompositeValueStore[S, H]) extends AnyVal {
-
-		def get[A <: H : ClassTag]: Option[A] = {
-			compositeValueStore.get(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
-		}
-
-		def getOrCreate[A <: H : ClassTag]: Option[A] = {
-			compositeValueStore.getOrCreate(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
-		}
-
-		def supports[A <: H : ClassTag]: Boolean = {
-			compositeValueStore.supports(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
-		}
-
-		def remove[A <: H : ClassTag]: DataTransactionResult = {
-			compositeValueStore.remove(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
-		}
-	}
-	*/
-
 	implicit class RichDataManager(val dataManager: DataManager) extends AnyVal {
 
 		def registerBuilder[A <: DataSerializable : ClassTag](builder: DataBuilder[A]): Unit = {
@@ -218,13 +185,35 @@ object Implicits {
 
 	implicit class RichServiceManager(val serviceManager: ServiceManager) extends AnyVal {
 
-		def provide[A : ClassTag]: Option[A] = serviceManager.provide(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
-		def provideTry[A : ClassTag]: Try[A] = Try(serviceManager.provideUnchecked(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]))
+		def provide[A: ClassTag]: Option[A] = serviceManager.provide(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+		def provideTry[A: ClassTag]: Try[A] = Try(serviceManager.provideUnchecked(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]))
+		def provideUnchecked[A: ClassTag]: A = serviceManager.provideUnchecked(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
 
-		def isRegistered[A : ClassTag]: Boolean = serviceManager.isRegistered(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
+		def isRegistered[A: ClassTag]: Boolean = serviceManager.isRegistered(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
 
-		def getRegistration[A : ClassTag]: Option[ProviderRegistration[A]] = {
+		def getRegistration[A: ClassTag]: Option[ProviderRegistration[A]] = {
 			serviceManager.getRegistration(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
 		}
 	}
+}
+
+class MacroImpl(val c: blackbox.Context) {
+	import c.universe._
+
+	def typeToken[A: c.WeakTypeTag]: c.Expr[TypeToken[A]] = {
+		val tpe = implicitly[c.WeakTypeTag[A]].tpe
+		if(tpe.takesTypeArgs) {
+			c.abort(tpe.typeSymbol.pos, "The type must be concrete")
+		}
+
+		val tree = if(tpe.etaExpand.typeParams.nonEmpty) {
+			q"new com.google.common.reflect.TypeToken[$tpe] {}"
+		}
+		else {
+			q"com.google.common.reflect.TypeToken.of(classOf[$tpe])"
+		}
+
+		c.Expr[TypeToken[A]](tree)
+	}
+
 }

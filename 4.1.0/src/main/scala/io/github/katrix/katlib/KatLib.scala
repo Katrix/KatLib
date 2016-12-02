@@ -29,19 +29,18 @@ import org.spongepowered.api.event.Listener
 import org.spongepowered.api.event.game.state.{GameConstructionEvent, GameInitializationEvent}
 import org.spongepowered.api.plugin.{Plugin, PluginContainer}
 
-import com.google.common.reflect.TypeToken
 import com.google.inject.Inject
 
 import io.github.katrix.katlib.helper.Implicits.RichOptional
 import io.github.katrix.katlib.helper.LogHelper
 import io.github.katrix.katlib.lib.LibKatLibPlugin
-import io.github.katrix.katlib.persistant.{Config, ConfigValue}
+import io.github.katrix.katlib.persistant.{CommentedConfigValue, Config}
 
 object KatLib {
 
 	final val CompiledAgainst = "4.1.0"
-	final val Version         = s"$CompiledAgainst-1.1.0"
-	final val ConstantVersion = "4.1.0-1.1.0"
+	final val Version         = s"$CompiledAgainst-2.0.0"
+	final val ConstantVersion = "4.1.0-2.0.0"
 	assert(Version == ConstantVersion)
 
 	private var _plugin: KatLib = _
@@ -50,16 +49,15 @@ object KatLib {
 
 @Plugin(id = LibKatLibPlugin.Id, name = LibKatLibPlugin.Name, version = KatLib.ConstantVersion, authors = Array("Katrix"))
 class KatLib @Inject()(
-	logger: Logger,
-	@ConfigDir(sharedRoot = true)
-	configDir: Path,
-	container: PluginContainer
-) extends ImplKatPlugin(logger, configDir, container, LibKatLibPlugin.Id) {
+		logger: Logger,
+		@ConfigDir(sharedRoot = true)
+		configDir: Path,
+		container: PluginContainer
+) extends ImplKatPlugin(logger, configDir, container) {
 
 	//Not actually used so far
 	override def config: Config = new Config {
-		override def seq: Seq[ConfigValue[_]] = Seq(version)
-		override val version: ConfigValue[String] = ConfigValue("0", TypeToken.of(classOf[String]), "Don't touch this", Seq("version"))
+		override def seq: Seq[CommentedConfigValue[_]] = Seq()
 	}
 
 	@Listener
@@ -73,7 +71,7 @@ class KatLib @Inject()(
 			case Some(version) if version != KatLib.CompiledAgainst => LogHelper.warn(
 				s"KatLib is not compiled against $version. KatLib (and plugins depending on it) might break")(this)
 			case None => LogHelper.warn("Could not find API version for Sponge. KatLib (and plugins depending on it) might break")(this)
-			case Some(version) =>
+			case Some(_) =>
 		}
 		Sponge.getCommandManager.register(this, pluginCmd.commandSpec, pluginCmd.aliases: _*)
 	}

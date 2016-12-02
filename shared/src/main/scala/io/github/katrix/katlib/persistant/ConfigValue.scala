@@ -20,8 +20,6 @@
  */
 package io.github.katrix.katlib.persistant
 
-import java.util.NoSuchElementException
-
 import scala.util.Try
 
 import com.google.common.reflect.TypeToken
@@ -29,38 +27,52 @@ import com.google.common.reflect.TypeToken
 import io.github.katrix.katlib.KatPlugin
 import io.github.katrix.katlib.helper.Implicits.RichConfigurationNode
 import io.github.katrix.katlib.helper.LogHelper
+import ninja.leaping.configurate.ConfigurationNode
 import ninja.leaping.configurate.commented.CommentedConfigurationNode
 import ninja.leaping.configurate.objectmapping.ObjectMappingException
 
-/**
-	* An object that holds on to an individual value in a config
-	*
-	* @param value The value of this node
-	* @param typeToken The typetoken of this node. Normally implicit
-	* @param comment The comment for this node
-	* @param path The path to get to this node from the root node
-	* @tparam A The value type this object stores
-	*/
-case class ConfigValue[A](value: A, implicit val typeToken: TypeToken[A], comment: String, path: Seq[String]) {
 
-	def setNode(node: CommentedConfigurationNode): Unit = {
-		node.getNode(path: _*).setComment(comment).value_=(value)
-	}
+/**
+	* An object that holds an individual value in the config
+	*/
+sealed trait ConfigValue[A, NodeType <: ConfigurationNode] {
+	type Self <: ConfigValue[A, NodeType]
+	def value: A
+	def value_=(value: A): Self
+	def typeToken: TypeToken[A]
+	def path: Seq[String]
+
+	def applyToNode(node: NodeType): Unit
+}
+
+final case class DataConfigValue[A](value: A, implicit val typeToken: TypeToken[A], path: Seq[String])
+	extends ConfigValue[A, ConfigurationNode] {
+	override type Self = DataConfigValue[A]
+	override def applyToNode(node: ConfigurationNode): Unit = node.getNode(path: _*).value_=(value)
+	override def value_=(value: A): Self = copy(value = value)
+}
+final case class CommentedConfigValue[A](value: A, implicit val typeToken: TypeToken[A], comment: String, path: Seq[String])
+	extends ConfigValue[A, CommentedConfigurationNode] {
+	override type Self = CommentedConfigValue[A]
+	override def applyToNode(node: CommentedConfigurationNode): Unit = node.getNode(path: _*).setComment(comment).value_=(value)
+	override def value_=(value: A): Self = copy(value = value)
 }
 
 object ConfigValue {
 
-	def apply[A: TypeToken](value: A, comment: String, path: Seq[String]): ConfigValue[A] = {
-		new ConfigValue(value, implicitly[TypeToken[A]], comment, path)
+	def apply[A: TypeToken](value: A, comment: String, path: Seq[String]): CommentedConfigValue[A] = {
+		CommentedConfigValue(value, implicitly[TypeToken[A]], comment, path)
 	}
 
-	def apply[A](node: CommentedConfigurationNode, existing: ConfigValue[A])(implicit plugin: KatPlugin): ConfigValue[A] = {
-		Try(Option(node.getNode(existing.path: _*).getValue(existing.typeToken)).get).map(value => existing.copy(value = value)).recover {
-			case e: ObjectMappingException =>
+	def apply[A: TypeToken](value: A, path: Seq[String]): DataConfigValue[A] = {
+		DataConfigValue(value, implicitly[TypeToken[A]], path)
+	}
+
+	def apply[A, NodeType <: ConfigurationNode](
+			node: NodeType, existing: ConfigValue[A, NodeType])(implicit plugin: KatPlugin): ConfigValue[A, NodeType] = {
+		Try(Option(node.getNode(existing.path: _*).getValue(existing.typeToken)).get).map(found => existing.value = found).recover {
+			case _: ObjectMappingException =>
 				LogHelper.error(s"Failed to deserialize value of ${existing.path}, using the default instead")
-				existing
-			case e: NoSuchElementException =>
-				LogHelper.debug(s"Failed to find the value of ${existing.path}, using the default instead")
 				existing
 		}.get
 	}

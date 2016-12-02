@@ -20,11 +20,13 @@
  */
 package io.github.katrix.katlib.helper
 
+import org.slf4j.Logger
+
 import io.github.katrix.katlib.KatPlugin
 
 object LogHelper {
 
-	def logger(implicit plugin: KatPlugin) = plugin.logger
+	def logger(implicit plugin: KatPlugin): Logger = plugin.logger
 
 	def trace(any: Any)(implicit plugin: KatPlugin): Unit = logger.trace(String.valueOf(any))
 

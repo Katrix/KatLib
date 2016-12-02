@@ -22,21 +22,22 @@ package io.github.katrix.katlib
 
 import java.nio.file.Path
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
 
 import org.slf4j.Logger
 import org.spongepowered.api.Sponge
 import org.spongepowered.api.plugin.{PluginContainer => SpongePluginContainer}
+import org.spongepowered.api.scheduler.SpongeExecutorService
 
 import io.github.katrix.katlib.command.CmdPlugin
 import io.github.katrix.katlib.helper.Implicits.PluginContainer
 
-abstract class ImplKatPlugin(val logger: Logger, val configDir: Path, spongeContainer: SpongePluginContainer, val usedId: String) extends KatPlugin {
+abstract class ImplKatPlugin(val logger: Logger, val configDir: Path, spongeContainer: SpongePluginContainer) extends KatPlugin {
 
 	val container: PluginContainer = spongeContainer
 
-	lazy val syncExecutor         = Sponge.getScheduler.createSyncExecutor(this)
-	lazy val syncExecutionContext = ExecutionContext.fromExecutorService(syncExecutor)
+	lazy val syncExecutor        : SpongeExecutorService           = Sponge.getScheduler.createSyncExecutor(this)
+	lazy val syncExecutionContext: ExecutionContextExecutorService = ExecutionContext.fromExecutorService(syncExecutor)
 
 	final val pluginCmd = new CmdPlugin()(this)
 }

@@ -25,17 +25,23 @@ import java.nio.file.Path
 import scala.annotation.tailrec
 
 import io.github.katrix.katlib.KatPlugin
+import ninja.leaping.configurate.commented.CommentedConfigurationNode
+import ninja.leaping.configurate.hocon.HoconConfigurationLoader
 
-abstract class ConfigLoader[A <: Config](dir: Path)(implicit plugin: KatPlugin) extends ConfigurateBase[A](dir, "config", false) {
+abstract class ConfigLoader[A <: Config](
+		dir: Path,
+		customOptions: HoconConfigurationLoader.Builder => HoconConfigurationLoader.Builder)(
+		implicit plugin: KatPlugin
+) extends ConfigurateBase[A, CommentedConfigurationNode, HoconConfigurationLoader](
+	dir, "config.conf", path => customOptions(HoconConfigurationLoader.builder().setPath(path)).build()) {
 
-	override protected def saveData(data: A): Unit = {
+	override def saveData(data: A): Unit = {
 
 		@tailrec
-		def inner(rest: Seq[ConfigValue[_]]): Unit = {
-			if(rest == Nil) {}
-			else {
+		def inner(rest: Seq[CommentedConfigValue[_]]): Unit = {
+			if(rest != Nil) {
 				val value = rest.head
-				value.setNode(cfgRoot)
+				value.applyToNode(cfgRoot)
 				inner(rest.tail)
 			}
 		}

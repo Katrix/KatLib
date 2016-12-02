@@ -23,6 +23,7 @@ package io.github.katrix.katlib
 import java.nio.file.Path
 
 import org.slf4j.Logger
+import org.spongepowered.api.Platform.Component
 import org.spongepowered.api.Sponge
 import org.spongepowered.api.config.ConfigDir
 import org.spongepowered.api.event.Listener
@@ -38,9 +39,9 @@ import io.github.katrix.katlib.persistant.{CommentedConfigValue, Config}
 
 object KatLib {
 
-	final val CompiledAgainst = "5.0.0"
+	final val CompiledAgainst = "6.0.0"
 	final val Version         = s"$CompiledAgainst-2.0.0"
-	final val ConstantVersion = "5.0.0-2.0.0"
+	final val ConstantVersion = "6.0.0-2.0.0"
 	assert(Version == ConstantVersion)
 
 	private var _plugin: KatLib = _
@@ -67,7 +68,7 @@ class KatLib @Inject()(
 
 	@Listener
 	def gameInit(event: GameInitializationEvent): Unit = {
-		Sponge.getPlatform.getApi.getVersion.toOption match {
+		Sponge.getPlatform.getContainer(Component.API).getVersion.toOption match {
 			case Some(version) if version != KatLib.CompiledAgainst => LogHelper.warn(
 				s"KatLib is not compiled against $version. KatLib (and plugins depending on it) might break")(this)
 			case None => LogHelper.warn("Could not find API version for Sponge. KatLib (and plugins depending on it) might break")(this)

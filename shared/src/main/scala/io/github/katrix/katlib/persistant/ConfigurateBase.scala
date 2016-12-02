@@ -24,90 +24,32 @@ import java.io.IOException
 import java.nio.file.Path
 
 import scala.concurrent.Future
-import scala.util.Failure
-
-import com.typesafe.config.ConfigRenderOptions
+import scala.util.{Failure, Try}
 
 import io.github.katrix.katlib.KatPlugin
 import io.github.katrix.katlib.helper.LogHelper
-import ninja.leaping.configurate.commented.CommentedConfigurationNode
-import ninja.leaping.configurate.hocon.HoconConfigurationLoader
+import ninja.leaping.configurate.ConfigurationNode
+import ninja.leaping.configurate.loader.ConfigurationLoader
 
-/**
-	* Base class for all configurate files
-	* Does not hold on to state itself, instead it serializes it to some object.
-	* Think of it as a giant serializer for files instead of nodes.
-	*
-	* @param configDir The path where the file should be saved
-	* @param name The name of the file
-	* @param data If this file should hold data or not
-	* @tparam A What is returned when reading this file
-	*/
-abstract class ConfigurateBase[A](configDir: Path, name: String, data: Boolean)(implicit plugin: KatPlugin) {
+abstract class ConfigurateBase[A, NodeType <: ConfigurationNode, LoaderType <: ConfigurationLoader[NodeType]](
+		configDir: Path, name: String, pathToLoader: Path => LoaderType)(implicit plugin: KatPlugin) {
 
-	protected val path      = {
-		val ending = if(data) ".json" else ".conf"
-		configDir.resolve(s"$name$ending")
-	}
-	protected val cfgLoader = {
-		val builder = HoconConfigurationLoader.builder.setPath(path)
-		if(data) {
-			builder.setRenderOptions(ConfigRenderOptions.concise)
-			builder.setPreservesHeader(false)
-		}
+	protected val path     : Path       = configDir.resolve(name)
+	protected val cfgLoader: LoaderType = pathToLoader(path)
+	protected var cfgRoot  : NodeType   = loadRoot()
 
-		builder.build()
-	}
-	protected val cfgRoot   = loadRoot()
-
-	{
-		val parent = path.getParent.toFile
-		if(!parent.exists && !parent.mkdirs) {
-			LogHelper.error(s"Something went wrong when creating the directory for the file used by ${getClass.getName}")
-		}
+	protected def loadRoot(): NodeType = {
+		Try(cfgLoader.load()).recover {
+			case e: IOException =>
+				LogHelper.error(
+					s"""Could not load configurate file for ${plugin.container.name}.
+						 |If this is the first time starting the plugin this is normal""".stripMargin, e)
+				cfgLoader.createEmptyNode()
+		}.get
 	}
 
-
-	/**
-		* Loads the data that this [[ConfigurateBase]] is responsible for.
-		*/
-	final def loadData(): A = {
-		val config = Option(versionNode.getString) match {
-			case None =>
-				LogHelper.error(s"Could not find version data for $name. Using default instead.")
-				default
-			case Some(version) => loadVersionedData(version)
-		}
-
-		saveData(config)
-		config
-	}
-
-	/**
-		* Loads data given some version
-		*/
-	protected def loadVersionedData(version: String): A
-
-	/**
-		* The default data.
-		*/
-	protected val default: A
-
-	/**
-		* Saves the specified data
-		*/
-	protected def saveData(data: A): Unit
-
-	protected def loadRoot(): CommentedConfigurationNode = try {
-		cfgLoader.load
-	}
-	catch {
-		case e: IOException =>
-			LogHelper.error(
-				s"""Could not load configurate file for ${plugin.container.name}.
-						|If this is the first time starting the plugin this is normal""".stripMargin, e)
-			cfgLoader.createEmptyNode()
-	}
+	def loadData: A
+	def saveData(data: A): Unit
 
 	protected def saveFile(): Future[Unit] = {
 		import scala.concurrent.ExecutionContext.Implicits.global
@@ -120,5 +62,4 @@ abstract class ConfigurateBase[A](configDir: Path, name: String, data: Boolean)(
 		future
 	}
 
-	protected def versionNode: CommentedConfigurationNode = cfgRoot.getNode("version")
 }
