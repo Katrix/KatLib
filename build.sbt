@@ -3,7 +3,7 @@ def removeSnapshot(str: String): String = if(str.endsWith("-SNAPSHOT")) str.subs
 lazy val commonSettings = Seq(
 	name := s"KatLib-${removeSnapshot(spongeApiVersion.value)}",
 	organization := "io.github.katrix",
-	version := "2.0.0",
+	version := "2.0.1",
 	scalaVersion := "2.12.0",
 	assemblyShadeRules in assembly := Seq(
 		ShadeRule.rename("scala.**" -> "io.github.katrix.katlib.shade.scala.@1").inAll,
