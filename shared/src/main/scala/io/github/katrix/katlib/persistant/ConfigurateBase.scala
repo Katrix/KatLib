@@ -38,6 +38,12 @@ abstract class ConfigurateBase[A, NodeType <: ConfigurationNode, LoaderType <: C
 	protected val cfgLoader: LoaderType = pathToLoader(path)
 	protected var cfgRoot  : NodeType   = loadRoot()
 
+	{
+		val file = path.toAbsolutePath.toFile
+		file.getParentFile.mkdirs()
+		file.createNewFile()
+	}
+
 	protected def loadRoot(): NodeType = {
 		Try(cfgLoader.load()).recover {
 			case e: IOException =>
