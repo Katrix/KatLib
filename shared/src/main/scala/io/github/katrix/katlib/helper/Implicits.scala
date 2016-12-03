@@ -199,14 +199,22 @@ object Implicits {
 
 class MacroImpl(val c: blackbox.Context) {
 	import c.universe._
+	import definitions.NothingClass
+
+	def checkType(tpe: Type): Unit = tpe.dealias match {
+		case t: TypeRef if t.sym == NothingClass =>
+			c.abort(c.enclosingPosition, "No TypeToken for Nothing")
+		case t if !t.typeSymbol.isClass => c.abort(c.enclosingPosition, "The type must be concrete")
+		case t if t.typeArgs.nonEmpty => t.typeArgs.foreach(t => checkType(t))
+		case _ =>
+	}
 
 	def typeToken[A: c.WeakTypeTag]: c.Expr[TypeToken[A]] = {
 		val tpe = implicitly[c.WeakTypeTag[A]].tpe
-		if(tpe.takesTypeArgs) {
-			c.abort(tpe.typeSymbol.pos, "The type must be concrete")
-		}
 
-		val tree = if(tpe.etaExpand.typeParams.nonEmpty) {
+		checkType(tpe)
+
+		val tree = if(tpe.typeArgs.nonEmpty) {
 			q"new com.google.common.reflect.TypeToken[$tpe] {}"
 		}
 		else {

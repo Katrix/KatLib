@@ -72,7 +72,10 @@ object ConfigValue {
 			node: NodeType, existing: ConfigValue[A, NodeType])(implicit plugin: KatPlugin): ConfigValue[A, NodeType] = {
 		Try(Option(node.getNode(existing.path: _*).getValue(existing.typeToken)).get).map(found => existing.value = found).recover {
 			case _: ObjectMappingException =>
-				LogHelper.error(s"Failed to deserialize value of ${existing.path}, using the default instead")
+				LogHelper.error(s"Failed to deserialize value of ${existing.path.mkString(", ")}, using the default instead")
+				existing
+			case _: NoSuchElementException =>
+				LogHelper.warn(s"No value found for ${existing.path.mkString(", ")}, using default instead")
 				existing
 		}.get
 	}
