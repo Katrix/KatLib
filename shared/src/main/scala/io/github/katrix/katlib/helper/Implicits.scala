@@ -32,6 +32,7 @@ import scala.util.Try
 
 import org.slf4j.Logger
 import org.spongepowered.api.asset.Asset
+import org.spongepowered.api.command.args.CommandContext
 import org.spongepowered.api.data.persistence.{DataBuilder, DataContentUpdater}
 import org.spongepowered.api.data.{DataManager, DataSerializable, DataView, ImmutableDataBuilder, ImmutableDataHolder}
 import org.spongepowered.api.plugin.{PluginContainer => SpongePluginContainer}
@@ -194,6 +195,20 @@ object Implicits {
 		def getRegistration[A: ClassTag]: Option[ProviderRegistration[A]] = {
 			serviceManager.getRegistration(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
 		}
+	}
+
+	import shapeless.tag._
+	import shapeless._
+
+	sealed trait CommandArg[A]
+	type CommandKey[A] = Text @@ CommandArg[A]
+
+	def cmdKey[A](key: Text): CommandKey[A] = tag[CommandArg[A]](key)
+
+	implicit class RichCommandContext(val ctx: CommandContext) extends AnyVal {
+
+		def all[A](key: Text @@ CommandArg[A]): Iterable[A] = ctx.getAll[A](key).asScala
+		def one[A](key: Text @@ CommandArg[A]): Option[A] = ctx.getOne[A](key).toOption
 	}
 }
 
