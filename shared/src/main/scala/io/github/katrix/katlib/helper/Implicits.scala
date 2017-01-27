@@ -203,7 +203,10 @@ object Implicits {
 	sealed trait CommandArg[A]
 	type CommandKey[A] = Text @@ CommandArg[A]
 
-	def cmdKey[A](key: Text): CommandKey[A] = tag[CommandArg[A]](key)
+	def cmdKey[A](key: Text): CommandKey[A] = {
+		val res = tag[CommandArg[A]](key)
+		res: CommandKey[A]
+	}
 
 	implicit class RichCommandContext(val ctx: CommandContext) extends AnyVal {
 
