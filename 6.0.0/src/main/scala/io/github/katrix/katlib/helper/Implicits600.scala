@@ -9,15 +9,13 @@ import org.spongepowered.api.data.persistence.DataTranslator
 
 object Implicits600 {
 
-	implicit class RichDataManager(val dataManager: DataManager) extends AnyVal {
+  implicit class RichDataManager(val dataManager: DataManager) extends AnyVal {
 
-		def registerTranslator[A : ClassTag](serializer: DataTranslator[A]): Unit = {
-			dataManager.registerTranslator(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], serializer)
-		}
+    def registerTranslator[A: ClassTag](serializer: DataTranslator[A]): Unit =
+      dataManager.registerTranslator(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], serializer)
 
-		def getTranslator[A : ClassTag]: Option[DataTranslator[A]] = {
-			dataManager.getTranslator(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
-		}
-	}
+    def getTranslator[A: ClassTag]: Option[DataTranslator[A]] =
+      dataManager.getTranslator(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+  }
 
 }

@@ -25,16 +25,16 @@ import java.util.Optional
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
+import scala.language.experimental.macros
 import scala.reflect.ClassTag
+import scala.reflect.macros.blackbox
 import scala.util.Try
 
 import org.slf4j.Logger
 import org.spongepowered.api.asset.Asset
-import org.spongepowered.api.data.manipulator.{DataManipulator, DataManipulatorBuilder, ImmutableDataManipulator}
+import org.spongepowered.api.command.args.CommandContext
 import org.spongepowered.api.data.persistence.{DataBuilder, DataContentUpdater}
-import org.spongepowered.api.data.value.ValueContainer
-import org.spongepowered.api.data.value.mutable.CompositeValueStore
-import org.spongepowered.api.data.{DataManager, DataSerializable, DataTransactionResult, DataView, ImmutableDataBuilder, ImmutableDataHolder}
+import org.spongepowered.api.data.{DataManager, DataSerializable, DataView, ImmutableDataBuilder, ImmutableDataHolder}
 import org.spongepowered.api.plugin.{PluginContainer => SpongePluginContainer}
 import org.spongepowered.api.service.{ProviderRegistration, ServiceManager}
 import org.spongepowered.api.text.format.{TextColor, TextColors, TextStyle}
@@ -46,184 +46,186 @@ import ninja.leaping.configurate.ConfigurationNode
 
 object Implicits {
 
-	implicit class RichString(val string: String) extends AnyVal {
+  implicit class RichString(val string: String) extends AnyVal {
 
-		def text: Text = Text.of(string)
-		def richText: RichText = Text.of(string)
-	}
+    def text:     Text     = Text.of(string)
+    def richText: RichText = Text.of(string)
+  }
 
-	implicit class RichText(val textOf: Text) extends AnyVal {
+  implicit class RichText(val textOf: Text) extends AnyVal {
 
-		def error(): Text = color(TextColors.RED).textOf
-		def success(): Text = color(TextColors.GREEN).textOf
-		def info(): Text = color(TextColors.YELLOW).textOf
+    def error():   Text = color(TextColors.RED).textOf
+    def success(): Text = color(TextColors.GREEN).textOf
+    def info():    Text = color(TextColors.YELLOW).textOf
 
-		def color(textColor: TextColor): RichText = textOf.toBuilder.color(textColor).build()
-		def style(textStyle: TextStyle): RichText = textOf.toBuilder.style(textStyle).build()
-	}
+    def color(textColor: TextColor): RichText = textOf.toBuilder.color(textColor).build()
+    def style(textStyle: TextStyle): RichText = textOf.toBuilder.style(textStyle).build()
+  }
 
-	implicit class RichOptional[A](val optional: Optional[A]) extends AnyVal {
+  implicit class RichOptional[A](val optional: Optional[A]) extends AnyVal {
 
-		def toOption: Option[A] = {
-			if(optional.isPresent) {
-				Some(optional.get())
-			}
-			else {
-				None
-			}
-		}
-	}
+    def toOption: Option[A] =
+      if (optional.isPresent) {
+        Some(optional.get())
+      } else {
+        None
+      }
+  }
 
-	implicit class RichOption[A](val option: Option[A]) extends AnyVal {
+  implicit class RichOption[A](val option: Option[A]) extends AnyVal {
 
-		def toOptional: Optional[A] = {
-			option match {
-				case Some(value) => Optional.of(value)
-				case None => Optional.empty()
-			}
-		}
-	}
+    def toOptional: Optional[A] =
+      option match {
+        case Some(value) => Optional.of(value)
+        case None        => Optional.empty()
+      }
+  }
 
-	implicit class Castable(val obj: AnyRef) extends AnyVal {
+  implicit class PluginContainer(val container: SpongePluginContainer) extends AnyVal {
 
-		def asInstanceOfOpt[T <: AnyRef : ClassTag]: Option[T] = {
-			obj match {
-				case t: T => Some(t)
-				case _ => None
-			}
-		}
-	}
+    def id:          String         = container.getId
+    def name:        String         = container.getName
+    def version:     Option[String] = container.getVersion.toOption
+    def description: Option[String] = container.getDescription.toOption
+    def url:         Option[String] = container.getUrl.toOption
+    def authors:     Seq[String]    = container.getAuthors.asScala
+    def getAsset(name: String): Option[Asset] = container.getAsset(name).toOption
+    def sources:  Option[Path] = container.getSource.toOption
+    def instance: Option[_]    = container.getInstance().toOption
+    def logger:   Logger       = container.getLogger
+  }
 
-	implicit class PluginContainer(val container: SpongePluginContainer) extends AnyVal {
+  implicit def typeToken[A]: TypeToken[A] = macro MacroImpl.typeToken[A]
 
-		def id: String = container.getId
-		def name: String = container.getName
-		def version: Option[String] = container.getVersion.toOption
-		def description: Option[String] = container.getDescription.toOption
-		def url: Option[String] = container.getUrl.toOption
-		def authors: Seq[String] = container.getAuthors.asScala
-		def getAsset(name: String): Option[Asset] = container.getAsset(name).toOption
-		def sources: Option[Path] = container.getSource.toOption
-		def instance: Option[_] = container.getInstance().toOption
-		def logger: Logger = container.getLogger
-	}
+  implicit class RichConfigurationNode(val node: ConfigurationNode) extends AnyVal {
 
-	implicit def typeToken[A: ClassTag]: TypeToken[A] = TypeToken.of(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
+    //Pretty syntax is bugged right now https://issues.scala-lang.org/browse/SI-8969
+    def value_=[A: TypeToken](value: A): Unit = node.setValue(implicitly[TypeToken[A]], value)
+    def value[A:   TypeToken]: A = node.getValue(implicitly[TypeToken[A]])
 
-	implicit class RichConfigurationNode(val node: ConfigurationNode) extends AnyVal {
+    def list[A: TypeToken]: Seq[A] = Seq(node.getList(implicitly[TypeToken[A]]).asScala: _*)
+  }
 
-		//Pretty syntax is bugged right now https://issues.scala-lang.org/browse/SI-8969
-		def value_=[A: TypeToken](value: A): Unit = node.setValue(implicitly[TypeToken[A]], value)
-		def value[A: TypeToken]: A = node.getValue(implicitly[TypeToken[A]])
+  implicit class TextStringContext(private val sc: StringContext) extends AnyVal {
 
-		def list[A: TypeToken]: Seq[A] = Seq(node.getList(implicitly[TypeToken[A]]).asScala: _*)
-	}
-
-	implicit class TextStringContext(private val sc: StringContext) extends AnyVal {
-
-		/**
+    /**
 			* Create a [[Text]] representation of this string.
 			* Really just a nicer way of saying [[Text#of(anyRef: AnyRef*]]
 			*/
-		def t(args: Any*): Text = {
-			sc.checkLengths(args)
+    def t(args: Any*): Text = {
+      sc.checkLengths(args)
 
-			@tailrec
-			def inner(partsLeft: Seq[String], argsLeft: Seq[Any], res: Seq[AnyRef]): Seq[AnyRef] = {
-				if(argsLeft == Nil) res
-				else {
-					inner(partsLeft.tail, argsLeft.tail, (res :+ argsLeft.head.asInstanceOf[AnyRef]) :+ partsLeft.head)
-				}
-			}
+      @tailrec
+      def inner(partsLeft: Seq[String], argsLeft: Seq[Any], res: Seq[AnyRef]): Seq[AnyRef] =
+        if (argsLeft == Nil) res
+        else {
+          inner(partsLeft.tail, argsLeft.tail, (res :+ argsLeft.head.asInstanceOf[AnyRef]) :+ partsLeft.head)
+        }
 
-			Text.of(inner(sc.parts.tail, args, Seq(sc.parts.head)): _*)
-		}
+      Text.of(inner(sc.parts.tail, args, Seq(sc.parts.head)): _*)
+    }
 
-		/**
+    /**
 			* Create a [[Text]] representation of this string.
 			* String arguments are converted into [[TextTemplate.Arg]]s
 			* Really just a nicer way of saying [[TextTemplate#of(anyRef: AnyRef*]]
 			*/
-		def tt(args: Any*): TextTemplate = {
-			sc.checkLengths(args)
+    def tt(args: Any*): TextTemplate = {
+      sc.checkLengths(args)
 
-			@tailrec
-			def inner(partsLeft: Seq[String], argsLeft: Seq[Any], res: Seq[AnyRef]): Seq[AnyRef] = {
-				if(argsLeft == Nil) res
-				else {
-					val argObj = argsLeft.head match {
-						case string: String => TextTemplate.arg(string)
-						case any@_ => any.asInstanceOf[AnyRef]
-					}
-					inner(partsLeft.tail, argsLeft.tail, (res :+ argObj) :+ partsLeft.head)
-				}
-			}
+      @tailrec
+      def inner(partsLeft: Seq[String], argsLeft: Seq[Any], res: Seq[AnyRef]): Seq[AnyRef] =
+        if (argsLeft == Nil) res
+        else {
+          val argObj = argsLeft.head match {
+            case string: String => TextTemplate.arg(string)
+            case any @ _ => any.asInstanceOf[AnyRef]
+          }
+          inner(partsLeft.tail, argsLeft.tail, (res :+ argObj) :+ partsLeft.head)
+        }
 
-			TextTemplate.of(inner(sc.parts.tail, args, Seq(sc.parts.head)): _*)
-		}
-	}
+      TextTemplate.of(inner(sc.parts.tail, args, Seq(sc.parts.head)): _*)
+    }
+  }
 
-	/*
-	implicit class RichCompositeValueStore[S <: CompositeValueStore[S, H], H <: ValueContainer[_]](val compositeValueStore: CompositeValueStore[S, H]) extends AnyVal {
+  implicit class RichDataManager(val dataManager: DataManager) extends AnyVal {
 
-		def get[A <: H : ClassTag]: Option[A] = {
-			compositeValueStore.get(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
-		}
+    def registerBuilder[A <: DataSerializable: ClassTag](builder: DataBuilder[A]): Unit =
+      dataManager.registerBuilder(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], builder)
 
-		def getOrCreate[A <: H : ClassTag]: Option[A] = {
-			compositeValueStore.getOrCreate(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
-		}
+    def registerContentUpdater[A <: DataSerializable: ClassTag](updater: DataContentUpdater): Unit =
+      dataManager.registerContentUpdater(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], updater)
 
-		def supports[A <: H : ClassTag]: Boolean = {
-			compositeValueStore.supports(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
-		}
+    def getWrappedContentUpdater[A <: DataSerializable: ClassTag](from: Int, to: Int): Option[DataContentUpdater] =
+      dataManager.getWrappedContentUpdater(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], from, to).toOption
 
-		def remove[A <: H : ClassTag]: DataTransactionResult = {
-			compositeValueStore.remove(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
-		}
-	}
-	*/
+    def getBuilder[A <: DataSerializable: ClassTag]: Option[DataBuilder[A]] =
+      dataManager.getBuilder(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
 
-	implicit class RichDataManager(val dataManager: DataManager) extends AnyVal {
+    def deserialize[A <: DataSerializable: ClassTag](dataView: DataView): Option[A] =
+      dataManager.deserialize(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], dataView).toOption
 
-		def registerBuilder[A <: DataSerializable : ClassTag](builder: DataBuilder[A]): Unit = {
-			dataManager.registerBuilder(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], builder)
-		}
+    def register[T <: ImmutableDataHolder[T]: ClassTag, B <: ImmutableDataBuilder[T, B]](builder: B): Unit =
+      dataManager.register(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]], builder)
 
-		def registerContentUpdater[A <: DataSerializable : ClassTag](updater: DataContentUpdater): Unit = {
-			dataManager.registerContentUpdater(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], updater)
-		}
+    def getImmutableBuilder[A <: ImmutableDataHolder[A]: ClassTag, B <: ImmutableDataBuilder[A, B]]: Option[B] =
+      dataManager.getImmutableBuilder(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+  }
 
-		def getWrappedContentUpdater[A <: DataSerializable : ClassTag](from: Int, to: Int): Option[DataContentUpdater] = {
-			dataManager.getWrappedContentUpdater(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], from, to).toOption
-		}
+  implicit class RichServiceManager(val serviceManager: ServiceManager) extends AnyVal {
 
-		def getBuilder[A <: DataSerializable : ClassTag]: Option[DataBuilder[A]] = {
-			dataManager.getBuilder(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
-		}
+    def provide[A:          ClassTag]: Option[A] = serviceManager.provide(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+    def provideTry[A:       ClassTag]: Try[A]    = Try(serviceManager.provideUnchecked(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]))
+    def provideUnchecked[A: ClassTag]: A         = serviceManager.provideUnchecked(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
 
-		def deserialize[A <: DataSerializable : ClassTag](dataView: DataView): Option[A] = {
-			dataManager.deserialize(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], dataView).toOption
-		}
+    def isRegistered[A: ClassTag]: Boolean = serviceManager.isRegistered(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
 
-		def register[T <: ImmutableDataHolder[T] : ClassTag, B <: ImmutableDataBuilder[T, B]](builder: B): Unit = {
-			dataManager.register(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]], builder)
-		}
+    def getRegistration[A: ClassTag]: Option[ProviderRegistration[A]] =
+      serviceManager.getRegistration(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+  }
 
-		def getImmutableBuilder[A <: ImmutableDataHolder[A] : ClassTag, B <: ImmutableDataBuilder[A, B]]: Option[B] = {
-			dataManager.getImmutableBuilder(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
-		}
-	}
+  import shapeless.tag._
+  import shapeless._
 
-	implicit class RichServiceManager(val serviceManager: ServiceManager) extends AnyVal {
+  sealed trait CommandArg[A]
+  type CommandKey[A] = Text @@ CommandArg[A]
 
-		def provide[A : ClassTag]: Option[A] = serviceManager.provide(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
-		def provideTry[A : ClassTag]: Try[A] = Try(serviceManager.provideUnchecked(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]))
+  def cmdKey[A](key: Text): CommandKey[A] = {
+    val res = tag[CommandArg[A]](key)
+    res: CommandKey[A]
+  }
 
-		def isRegistered[A : ClassTag]: Boolean = serviceManager.isRegistered(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
+  implicit class RichCommandContext(val ctx: CommandContext) extends AnyVal {
 
-		def getRegistration[A : ClassTag]: Option[ProviderRegistration[A]] = {
-			serviceManager.getRegistration(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
-		}
-	}
+    def all[A](key: Text @@ CommandArg[A]): Iterable[A] = ctx.getAll[A](key).asScala
+    def one[A](key: Text @@ CommandArg[A]): Option[A]   = ctx.getOne[A](key).toOption
+  }
+}
+
+class MacroImpl(val c: blackbox.Context) {
+  import c.universe._
+  import definitions.NothingClass
+
+  def checkType(tpe: Type): Unit = tpe.dealias match {
+    case t: TypeRef if t.sym == NothingClass =>
+      c.abort(c.enclosingPosition, "No TypeToken for Nothing")
+    case t if !t.typeSymbol.isClass => c.abort(c.enclosingPosition, "The type must be concrete")
+    case t if t.typeArgs.nonEmpty   => t.typeArgs.foreach(t => checkType(t))
+    case _                          =>
+  }
+
+  def typeToken[A: c.WeakTypeTag]: c.Expr[TypeToken[A]] = {
+    val tpe = implicitly[c.WeakTypeTag[A]].tpe
+
+    checkType(tpe)
+
+    val tree = if (tpe.typeArgs.nonEmpty) {
+      q"new _root_.com.google.common.reflect.TypeToken[$tpe] {}"
+    } else {
+      q"_root_.com.google.common.reflect.TypeToken.of(classOf[$tpe])"
+    }
+
+    c.Expr[TypeToken[A]](tree)
+  }
+
 }

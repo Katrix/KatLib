@@ -20,20 +20,22 @@
  */
 package io.github.katrix.katlib.helper
 
+import org.slf4j.Logger
+
 import io.github.katrix.katlib.KatPlugin
 
 object LogHelper {
 
-	def logger(implicit plugin: KatPlugin) = plugin.logger
+  def logger(implicit plugin: KatPlugin): Logger = plugin.logger
 
-	def trace(any: Any)(implicit plugin: KatPlugin): Unit = logger.trace(String.valueOf(any))
+  def trace(any: Any)(implicit plugin: KatPlugin): Unit = logger.trace(String.valueOf(any))
 
-	def info(any: Any)(implicit plugin: KatPlugin): Unit = logger.info(String.valueOf(any))
+  def info(any: Any)(implicit plugin: KatPlugin): Unit = logger.info(String.valueOf(any))
 
-	def debug(any: Any)(implicit plugin: KatPlugin): Unit = logger.debug(String.valueOf(any))
+  def debug(any: Any)(implicit plugin: KatPlugin): Unit = logger.debug(String.valueOf(any))
 
-	def warn(any: Any)(implicit plugin: KatPlugin): Unit = logger.warn(String.valueOf(any))
+  def warn(any: Any)(implicit plugin: KatPlugin): Unit = logger.warn(String.valueOf(any))
 
-	def error(any: Any)(implicit plugin: KatPlugin): Unit = logger.error(String.valueOf(any))
-	def error(msg: String, e: Throwable)(implicit plugin: KatPlugin): Unit = logger.error(msg, e)
+  def error(any: Any)(implicit plugin: KatPlugin): Unit = logger.error(String.valueOf(any))
+  def error(msg: String, e:            Throwable)(implicit plugin: KatPlugin): Unit = logger.error(msg, e)
 }

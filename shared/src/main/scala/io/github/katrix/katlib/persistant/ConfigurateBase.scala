@@ -32,34 +32,41 @@ import ninja.leaping.configurate.ConfigurationNode
 import ninja.leaping.configurate.loader.ConfigurationLoader
 
 abstract class ConfigurateBase[A, NodeType <: ConfigurationNode, LoaderType <: ConfigurationLoader[NodeType]](
-		configDir: Path, name: String, pathToLoader: Path => LoaderType)(implicit plugin: KatPlugin) {
+  configDir:       Path,
+  name:            String,
+  pathToLoader:    Path => LoaderType
+)(implicit plugin: KatPlugin) {
 
-	protected val path     : Path       = configDir.resolve(name)
-	protected val cfgLoader: LoaderType = pathToLoader(path)
-	protected var cfgRoot  : NodeType = loadRoot()
+  protected val path:      Path       = configDir.resolve(name)
+  protected val cfgLoader: LoaderType = pathToLoader(path)
+  protected var cfgRoot:   NodeType   = loadRoot()
 
-	protected def loadRoot(): NodeType = {
-		Try(cfgLoader.load()).recover {
-			case e: IOException =>
-				LogHelper.error(
-					s"""Could not load configurate file for ${plugin.container.name}.
+  {
+    val file = path.toAbsolutePath.toFile
+    file.getParentFile.mkdirs()
+    file.createNewFile()
+  }
+
+  protected def loadRoot(): NodeType =
+    Try(cfgLoader.load()).recover {
+      case e: IOException =>
+        LogHelper.error(s"""Could not load configurate file for ${plugin.container.name}.
 						 |If this is the first time starting the plugin this is normal""".stripMargin, e)
-				cfgLoader.createEmptyNode()
-		}.get
-	}
+        cfgLoader.createEmptyNode()
+    }.get
 
-	def loadData: A
-	def saveData(data: A): Unit
+  def loadData: A
+  def saveData(data: A): Unit
 
-	protected def saveFile(): Future[Unit] = {
-		import scala.concurrent.ExecutionContext.Implicits.global
-		val future = Future(cfgLoader.save(cfgRoot))
-		future.onComplete {
-			case Failure(e) => e.printStackTrace()
-			case _ =>
-		}
+  protected def saveFile(): Future[Unit] = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    val future = Future(cfgLoader.save(cfgRoot))
+    future.onComplete {
+      case Failure(e) => e.printStackTrace()
+      case _          =>
+    }
 
-		future
-	}
+    future
+  }
 
 }
