@@ -1,5 +1,10 @@
 def removeSnapshot(str: String): String = if (str.endsWith("-SNAPSHOT")) str.substring(0, str.length - 9) else str
 
+lazy val publishResolver = {
+  val artifactPattern = s"""${file("publish").absolutePath}/[revision]/[artifact]-[revision](-[classifier]).[ext]"""
+  Resolver.file("publish").artifacts(artifactPattern)
+}
+
 lazy val commonSettings = Seq(
   name := s"KatLib-${removeSnapshot(spongeApiVersion.value)}",
   organization := "io.github.katrix",
@@ -11,6 +16,14 @@ lazy val commonSettings = Seq(
   ),
   scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-Xlint", "-Yno-adapted-args", "-Ywarn-dead-code", "-Ywarn-unused-import"),
   crossPaths := false,
+  publishTo := Some(publishResolver),
+  publishArtifact in (Compile, packageDoc) := false,
+  publishArtifact in (Compile, packageSrc) := false,
+  artifact in (Compile, assembly) := {
+    val art = (artifact in (Compile, assembly)).value
+    art.copy(`classifier` = Some("assembly"))
+  },
+  addArtifact(artifact in (Compile, assembly), assembly),
   spongePluginInfo := spongePluginInfo.value.copy(
     id = "katlib",
     name = Some("KatLib"),
@@ -20,10 +33,10 @@ lazy val commonSettings = Seq(
   ),
   libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.2" exclude ("org.typelevel", "macro-compat_2.12"), //Don't think macro-compat needs to be in the jar
   artifactName := { (sv, module, artifact) =>
-    s"​${artifact.name}-${module.revision}.${artifact.extension}"
+    s"A${artifact.name}-${module.revision}.${artifact.extension}"
   },
   assemblyJarName <<= (name, version) map { (name, version) =>
-    s"​$name-assembly-$version.jar"
+    s"A$name-assembly-$version.jar"
   }
 )
 
@@ -68,5 +81,3 @@ lazy val katLibRoot = (project in file("."))
   .settings(publishArtifact := false)
   .disablePlugins(AssemblyPlugin)
   .aggregate(katLibShared, katLibV410, katLibV500, katLibV600)
-
-resolvers += Resolver.defaultLocal
