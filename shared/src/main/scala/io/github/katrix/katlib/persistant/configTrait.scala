@@ -2,113 +2,118 @@ package io.github.katrix.katlib.persistant
 
 import scala.annotation.{StaticAnnotation, compileTimeOnly}
 import scala.collection.immutable.Seq
-import scala.language.experimental.macros
 import scala.meta._
-import scala.meta.dialects.Paradise211
 
-@compileTimeOnly("@comment can only be used inside a @configuration trait")
+@compileTimeOnly("@comment can only be used inside a @cfg class")
 class comment(comment: String) extends StaticAnnotation
 
-@compileTimeOnly("@configuration can only be used on a trait")
-class configuration(name: String) extends StaticAnnotation {
+@compileTimeOnly("@cfg can only be used on a class")
+class cfg(name: String) extends StaticAnnotation {
 
-	inline def apply(defn: Any): Any = meta {
+  inline def apply(defn: Any): Any = meta {
 
-		val configName = this match {
-			case q"new $_(${arg @ Lit(name: String)})" if name.contains(".") => arg
-			case q"new $_($_)" => abort("Name needs to have an extension")
-			case _ => abort("@configuration needs a name")
-		}
+    val configName = this match {
+      case q"new $_(${arg @ Lit(name: String)})" if name.contains(".") => arg
+      case q"new $_($_)" => abort("Name needs to have an extension")
+      case _             => abort("@cfg needs a name")
+    }
 
-		val res = defn match {
-			case q"trait $traitName {..$traitBody}" =>
+    val res = defn match {
+      case q"class $className {..$classBody}" =>
+        //Collects all inner classes and their bodies as a map using the structure of Type.Name as a key
+        def innerClasses(stats: Seq[Stat]): Map[String, (Type.Name, Seq[Stat])] = stats.collect {
+          case q"class $className {..$classBody}" => (className.structure, (className, classBody))
+        }.toMap
 
-				def innerTraits(stats: Seq[Stat]): Seq[(Type.Name, Seq[Stat])] = {
-					stats.collect {
-						case q"trait $traitName {..$traitBody}" => traitName -> traitBody
-					}
-				}
+        //Creates a load and save body for inner classes
+        def createClassBody(valName: Pat.Var.Term, className: Type.Name, classBody: Seq[Stat], parents: Seq[Term.Name]): (Some[Stat], Seq[Stat]) = {
+          val newParents       = parents :+ valName.name
+          val ctorClassName    = Ctor.Ref.Name(className.value)
+          val newInnerClasses  = innerClasses(classBody)
+          val (loadBody, save) = classBody.map((stat: Stat) => getUsedBody(stat, newParents, newInnerClasses)).unzip
 
-				def createTraitBody(varName: Pat.Var.Term, traitName: Type.Name, traitBody: Seq[Stat], parents: Seq[Term.Name]): (Some[Stat], Some[Stat], Seq[Stat]) = {
-					val newParents = parents :+ varName.name
-					val ctorTraitName = Ctor.Ref.Name(traitName.value)
-					val (implConfigBody, implDefaultBody, save) = traitBody.map(getUsedBody(newParents, _, innerTraits(traitBody))).unzip3
+          val load = q"override val $valName: $className = new $ctorClassName {..${loadBody.flatten} }"
 
-					val configimpl = q"val $varName: $traitName = new $ctorTraitName {..${implConfigBody.flatten} }"
-					val defaultImpl = q"val $varName: $traitName = new $ctorTraitName {..${implDefaultBody.flatten} }"
+          (Some(load), save.flatten)
+        }
 
-					(Some(configimpl), Some(defaultImpl), save.flatten)
-				}
+        //Creates a load and save body for a statement
+        def getUsedBody(stat: Stat, parents: Seq[Term.Name], innerClasses: Map[String, (Type.Name, Seq[Stat])]) = {
 
-				def getUsedBody(parents: Seq[Term.Name], stat: Stat, innerSections: Seq[(Type.Name, Seq[Stat])]): (Option[Stat], Option[Stat], Seq[Stat]) = {
+          //Creates a Ref term comprised of different names
+          def selectNames(names: Seq[Term.Name]): Term.Ref with Pat = names match {
+            case Seq(first)                     => q"$first"
+            case Seq(first, second)             => q"$first.$second"
+            case Seq(first, second, rest @ _ *) => rest.foldLeft(q"$first.$second")((acc, parent) => q"$acc.$parent")
+          }
 
-					def selectNames(names: Seq[Term.Name]): Term.Ref with Pat = names match {
-						case Seq(first) => q"$first"
-						case Seq(first, second) => q"$first.$second"
-						case Seq(first, second, rest @ _*) => rest.foldLeft(q"$first.$second")((acc, parent) => q"$acc.$parent")
-					}
+          def getRefParents(name: Term.Name): Term.Ref with Pat = selectNames(parents :+ name)
+          def getSelectRoot(name: Term.Name, root: Term.Name): Term.Select = selectNames(root +: parents :+ name).asInstanceOf[Term.Select]
 
-					def getRefParents(name: Term.Name): Term.Ref with Pat = selectNames(parents :+ name)
-					def getSelectRoot(name: Term.Name, root: Term.Name): Term.Select = selectNames(root +: parents :+ name).asInstanceOf[Term.Select]
+          def createLoadSaveStat(comment: Option[Term.Arg], valName: Pat.Var.Term, tpe: Type, body: Term): (Some[Stat], Seq[Stat]) = {
+            val name     = valName.name
+            val nodeName = Lit(getRefParents(name).syntax.replace("`", ""))
 
-					def createBody(comment: Option[Term.Arg], varName: Pat.Var.Term, tpe: Type, body: Term): (Some[Stat], None.type, Seq[Stat]) = {
-						val name = varName.name
-						val nodeName = Lit(getRefParents(name).syntax)
+            val dataPath    = getSelectRoot(name, Term.Name("data"))
+            val defaultPath = getSelectRoot(name, Term.Name("DefaultConfig"))
 
-						val dataPath = getSelectRoot(name, Term.Name("data"))
-						val defaultPath = getSelectRoot(name, Term.Name("DefaultConfig"))
+            val typeToken = tpe match {
+              case clazz: Type.Name => q"TypeToken.of(classOf[$clazz])"
+              case _ => q"new TypeToken[$tpe] {}"
+            }
 
-						val typeToken = tpe match {
-							case ident: Type.Name => q"TypeToken.of(classOf[$ident])"
-							case _ => q"new TypeToken[$tpe] {}"
-						}
+            val save = comment match {
+              case Some(foundComment) => q"cfgRoot.getNode($nodeName.split('.'): _*).setComment($foundComment).setValue($dataPath)"
+              case None               => q"cfgRoot.getNode($nodeName.split('.'): _*).setValue($dataPath)"
+            }
 
-						val save = comment match {
-							case Some(foundComment) => q"cfgRoot.getNode($nodeName.split('.'): _*).setComment($foundComment).setValue($dataPath)"
-							case None => q"cfgRoot.getNode($nodeName.split('.'): _*).setValue($dataPath)"
-						}
-						val configimpl = q"override val $varName: $tpe = Option(cfgRoot.getNode($nodeName.split('.'): _*).getValue($typeToken)).getOrElse($defaultPath)"
+            val load =
+              q"override val $valName: $tpe = Option(cfgRoot.getNode($nodeName.split('.'): _*).getValue($typeToken)).getOrElse($defaultPath)"
 
-						(Some(configimpl), None, Seq(save))
-					}
+            (Some(load), Seq(save))
+          }
 
-					def getTyping(tpe: Option[Type], body: Term): Type = tpe.getOrElse(abort(body.pos, "Could not find type"))
+          def getTyping(tpe: Option[Type], body: Term): Type = tpe.getOrElse(abort(body.pos, "Could not find type"))
 
-					stat match {
-						case q"@comment($comment) val ${name: Pat.Var.Term}: $tpe = $body" =>
-							createBody(Some(comment), name, getTyping(tpe.asInstanceOf[Option[Type]], body), body)
-						case q"val ${name: Pat.Var.Term}: $tpe = $body" =>
-							createBody(None, name, getTyping(tpe.asInstanceOf[Option[Type]], body), body)
-						case q"val $name: $tpe" if innerSections.exists(_._1.structure == tpe.structure) => //Yuck
-							val (traitName, traitBody) = innerSections.find(_._1.structure == tpe.structure).get
-							createTraitBody(name, traitName, traitBody, parents)
-						case q"trait $_ {..$_}" => (None, None,Seq())
-						case _ => abort(stat.pos, s"A configTrait can only have normal vals.\n${stat.syntax}")
-					}
-				}
+          stat match {
+            case q"@comment($comment) val ${name: Pat.Var.Term}: $tpe = $body" =>
+              val typing = getTyping(tpe.asInstanceOf[Option[Type]], body)
+              if (innerClasses.contains(typing.structure)) abort(stat.pos, "A inner class can't have a comment")
+              createLoadSaveStat(Some(comment), name, typing, body)
+            case q"val ${name: Pat.Var.Term}: ${tpe} = $body" =>
+              val typing = getTyping(tpe.asInstanceOf[Option[Type]], body)
+              innerClasses.get(typing.structure) match {
+                case Some((tName, stats)) => createClassBody(name, tName, stats, parents)
+                case None                 => createLoadSaveStat(None, name, typing, body)
+              }
 
-				def stripComment(tree: Stat): Stat = {
-					tree match {
-						case q"@comment($_) val ${name: Pat.Var.Term}: $tpe = $body" => q"val $name: $tpe = $body"
-						case q"trait $name {..$body}" =>
-							val strippedBody = body.map(stripComment)
-							q"trait $name {..$strippedBody }"
-						case _ => tree //We already do other checks that outlaws anything other than val
-					}
-				}
+            case q"class $_ {..$_}" => (None, Nil)
+            case _                  => abort(stat.pos, s"A @cfg can only have normal vals.\n${stat.syntax}")
+          }
+        }
 
-				val (implConfigBody, implDefaultBody, saveBody) = traitBody.map(getUsedBody(Seq(), _, innerTraits(traitBody))).unzip3
-				val strippedBody = traitBody.map(stripComment)
+        //Strips the @comment annotation from the class
+        def stripComment(tree: Stat): Stat =
+          tree match {
+            case q"@comment($_) val ${name: Pat.Var.Term}: $tpe = $body" => q"val $name: $tpe = $body"
+            case q"class $name {..$body}" =>
+              val strippedBody = body.map(stripComment)
+              q"class $name {..$strippedBody }"
+            case _ => tree //We already do other checks that outlaws anything other than val
+          }
 
-				val traitNameString = traitName.value
-				val objTraitName = Term.Name(traitNameString)
-				val ctorTraitName = Ctor.Ref.Name(traitNameString)
+        val (loadBody, saveBody) = classBody.map((stat: Stat) => getUsedBody(stat, Nil, innerClasses(classBody))).unzip
+        val strippedBody         = classBody.map(stripComment)
 
-				q"""
-					trait $traitName {..$strippedBody}
+        val classNameString = className.value
+        val objClassName    = Term.Name(classNameString)
+        val ctorClassName   = Ctor.Ref.Name(classNameString)
+        val defaultTemplate = Template(Nil, Seq(ctorClassName), Term.Param(Nil, Name.Anonymous(), None, None), None)
 
-					object $objTraitName {
-						import _root_.ninja.leaping.configurate.ConfigurationNode
+        q"""
+					class $className {..$strippedBody}
+
+					object $objClassName {
 						import _root_.ninja.leaping.configurate.commented.CommentedConfigurationNode
 						import _root_.ninja.leaping.configurate.hocon.{HoconConfigurationLoader => HoconLoader}
 						import _root_.io.github.katrix.katlib.persistant.ConfigurateBase
@@ -116,30 +121,34 @@ class configuration(name: String) extends StaticAnnotation {
 						import _root_.java.nio.file.Path
 						import _root_.com.google.common.reflect.TypeToken
 
-		 				object DefaultConfig extends $ctorTraitName {
-			 				..${implDefaultBody.flatten}
-		 				}
+		 				val DefaultConfig = new $defaultTemplate
 
-			 			def loader(dir: Path, configBuilder: Path => HoconLoader)(
-			 					implicit plugin: KatPlugin): ConfigurateBase[$traitName, CommentedConfigurationNode, HoconLoader] = {
-			 				new ConfigurateBase[$traitName, CommentedConfigurationNode, HoconLoader](dir, $configName, configBuilder) {
+			 			def loader(dir: Path, configBuilder: Path => HoconLoader, beforeLoad: CommentedConfigurationNode => Unit = _ => ())(
+			 					implicit plugin: KatPlugin): ConfigurateBase[$className, CommentedConfigurationNode, HoconLoader] = {
+			 				new ConfigurateBase[$className, CommentedConfigurationNode, HoconLoader](dir, $configName, configBuilder) {
 
-								override def loadData: $traitName = new $ctorTraitName {
-									..${implConfigBody.flatten}
-								}
-
-								override def saveData(data: $traitName): Unit = {
+								override def loadData: $className = {
+								  beforeLoad(cfgRoot)
+                  new $ctorClassName {
+									  ..${loadBody.flatten}
+								  }
+                }
+								override def saveData(data: $className): Unit = {
 			 						..${saveBody.flatten}
 									saveFile()
 								}
+
+                def reload(): Unit = {
+                  cfgRoot = loadRoot()
+                }
 			 				}
 			 			}
 					}
 				 """
-			case _ => abort("@configuration can only be used on a trait")
-		}
+      case _ => abort("@cfg can only be used on a concrete class")
+    }
 
-		println(res.syntax)
-		res
-	}
+    //println(res.syntax)
+    res
+  }
 }
