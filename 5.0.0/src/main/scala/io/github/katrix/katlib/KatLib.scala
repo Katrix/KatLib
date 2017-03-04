@@ -38,41 +38,36 @@ import io.github.katrix.katlib.persistant.{CommentedConfigValue, Config}
 
 object KatLib {
 
-	final val CompiledAgainst = "5.0.0"
-	final val Version         = s"$CompiledAgainst-2.0.1"
-	final val ConstantVersion = "5.0.0-2.0.1"
-	assert(Version == ConstantVersion)
+  final val CompiledAgainst = "5.0.0"
+  final val Version         = s"$CompiledAgainst-2.0.1"
+  final val ConstantVersion = "5.0.0-2.0.1"
+  assert(Version == ConstantVersion)
 
-	private var _plugin: KatLib = _
-	implicit def plugin: KatLib = _plugin
+  private var _plugin: KatLib = _
+  implicit def plugin: KatLib = _plugin
 }
 
 @Plugin(id = LibKatLibPlugin.Id, name = LibKatLibPlugin.Name, version = KatLib.ConstantVersion, authors = Array("Katrix"))
-class KatLib @Inject()(
-		logger: Logger,
-		@ConfigDir(sharedRoot = true)
-		configDir: Path,
-		container: PluginContainer
-) extends ImplKatPlugin(logger, configDir, container) {
+class KatLib @Inject()(logger: Logger, @ConfigDir(sharedRoot = true) configDir: Path, container: PluginContainer)
+    extends ImplKatPlugin(logger, configDir, container) {
 
-	//Not actually used so far
-	override def config: Config = new Config {
-		override def seq: Seq[CommentedConfigValue[_]] = Seq()
-	}
+  //Not actually used so far
+  override def config: Config = new Config {
+    override def seq: Seq[CommentedConfigValue[_]] = Seq()
+  }
 
-	@Listener
-	def gameConstruct(event: GameConstructionEvent): Unit = {
-		KatLib._plugin = this
-	}
+  @Listener
+  def gameConstruct(event: GameConstructionEvent): Unit =
+    KatLib._plugin = this
 
-	@Listener
-	def gameInit(event: GameInitializationEvent): Unit = {
-		Sponge.getPlatform.getApi.getVersion.toOption match {
-			case Some(version) if version != KatLib.CompiledAgainst => LogHelper.warn(
-				s"KatLib is not compiled against $version. KatLib (and plugins depending on it) might break")(this)
-			case None => LogHelper.warn("Could not find API version for Sponge. KatLib (and plugins depending on it) might break")(this)
-			case Some(_) =>
-		}
-		Sponge.getCommandManager.register(this, pluginCmd.commandSpec, pluginCmd.aliases: _*)
-	}
+  @Listener
+  def gameInit(event: GameInitializationEvent): Unit = {
+    Sponge.getPlatform.getApi.getVersion.toOption match {
+      case Some(version) if version != KatLib.CompiledAgainst =>
+        LogHelper.warn(s"KatLib is not compiled against $version. KatLib (and plugins depending on it) might break")(this)
+      case None    => LogHelper.warn("Could not find API version for Sponge. KatLib (and plugins depending on it) might break")(this)
+      case Some(_) =>
+    }
+    Sponge.getCommandManager.register(this, pluginCmd.commandSpec, pluginCmd.aliases: _*)
+  }
 }

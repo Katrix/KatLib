@@ -9,31 +9,27 @@ import org.spongepowered.api.data.value.mutable.{ListValue, MapValue, OptionalVa
 
 object KeyFactoryS {
 
-	def makeSingleKey[A : ClassTag, B <: BaseValue[A] : ClassTag](query: DataQuery): Key[B] = {
-		KeyFactory.makeSingleKey(
-			implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]],
-			implicitly[ClassTag[B]].runtimeClass.asInstanceOf[Class[B]],
-			query)
-	}
+  def makeSingleKey[A: ClassTag, B <: BaseValue[A]: ClassTag](query: DataQuery): Key[B] =
+    KeyFactory.makeSingleKey(
+      implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]],
+      implicitly[ClassTag[B]].runtimeClass.asInstanceOf[Class[B]],
+      query
+    )
 
-	def makeListKey[A : ClassTag](query: DataQuery): Key[ListValue[A]] = {
-		KeyFactory.makeListKey(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], query)
-	}
+  def makeListKey[A: ClassTag](query: DataQuery): Key[ListValue[A]] =
+    KeyFactory.makeListKey(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], query)
 
-	def makeSetKey[A : ClassTag](query: DataQuery): Key[SetValue[A]] = {
-		KeyFactory.makeSetKey(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], query)
-	}
+  def makeSetKey[A: ClassTag](query: DataQuery): Key[SetValue[A]] =
+    KeyFactory.makeSetKey(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], query)
 
-	def makeOptionalKey[A : ClassTag](query: DataQuery): Key[OptionalValue[A]] = {
-		KeyFactory.makeOptionalKey(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], query)
-	}
+  def makeOptionalKey[A: ClassTag](query: DataQuery): Key[OptionalValue[A]] =
+    KeyFactory.makeOptionalKey(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], query)
 
-	def makeMapKey[A : ClassTag, B : ClassTag](query: DataQuery): Key[MapValue[A, B]] = {
-		KeyFactory.makeMapKey(
-			implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]],
-			implicitly[ClassTag[B]].runtimeClass.asInstanceOf[Class[B]],
-			query
-		)
-	}
+  def makeMapKey[A: ClassTag, B: ClassTag](query: DataQuery): Key[MapValue[A, B]] =
+    KeyFactory.makeMapKey(
+      implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]],
+      implicitly[ClassTag[B]].runtimeClass.asInstanceOf[Class[B]],
+      query
+    )
 
 }

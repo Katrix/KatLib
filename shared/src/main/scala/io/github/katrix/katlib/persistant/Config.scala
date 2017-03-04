@@ -24,14 +24,16 @@ import com.google.common.reflect.TypeToken
 
 abstract class Config {
 
-	/**
+  /**
 		* Gets a config value with the same path as it is saved with
 		*/
-	def byPath[A: TypeToken](path: String*): Option[CommentedConfigValue[A]] = seq.find(c => c.typeToken == implicitly[TypeToken[A]] && c.path == path)
-		.asInstanceOf[Option[CommentedConfigValue[A]]]
+  def byPath[A: TypeToken](path: String*): Option[CommentedConfigValue[A]] =
+    seq
+      .find(c => c.typeToken == implicitly[TypeToken[A]] && c.path == path)
+      .asInstanceOf[Option[CommentedConfigValue[A]]]
 
-	/**
+  /**
 		* All nodes kept here
 		*/
-	def seq: Seq[CommentedConfigValue[_]]
+  def seq: Seq[CommentedConfigValue[_]]
 }

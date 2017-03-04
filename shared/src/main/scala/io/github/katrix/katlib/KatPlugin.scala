@@ -33,23 +33,23 @@ import io.github.katrix.katlib.persistant.Config
 
 trait KatPlugin {
 
-	def logger: Logger
+  def logger: Logger
 
-	def configDir: Path
+  def configDir: Path
 
-	def container: PluginContainer
+  def container: PluginContainer
 
-	def syncExecutor: SpongeExecutorService
+  def syncExecutor: SpongeExecutorService
 
-	def syncExecutionContext: ExecutionContextExecutorService
+  def syncExecutionContext: ExecutionContextExecutorService
 
-	/**
+  /**
 		* A root command providing stuff like the help and info command
 		*/
-	def pluginCmd: CmdPlugin
+  def pluginCmd: CmdPlugin
 
-	/**
+  /**
 		* The config for the plugin
 		*/
-	def config: Config
+  def config: Config
 }

@@ -27,6 +27,6 @@ import io.github.katrix.katlib.helper.LogHelper
 	*/
 trait InitNeeded {
 
-	def init()(implicit plugin: KatPlugin): Unit = LogHelper.trace(s"Loaded ${getClass.getName}")
+  def init()(implicit plugin: KatPlugin): Unit = LogHelper.trace(s"Loaded ${getClass.getName}")
 
 }

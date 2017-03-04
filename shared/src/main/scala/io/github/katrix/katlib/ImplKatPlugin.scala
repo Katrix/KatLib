@@ -34,10 +34,10 @@ import io.github.katrix.katlib.helper.Implicits.PluginContainer
 
 abstract class ImplKatPlugin(val logger: Logger, val configDir: Path, spongeContainer: SpongePluginContainer) extends KatPlugin {
 
-	val container: PluginContainer = spongeContainer
+  val container: PluginContainer = spongeContainer
 
-	lazy val syncExecutor        : SpongeExecutorService           = Sponge.getScheduler.createSyncExecutor(this)
-	lazy val syncExecutionContext: ExecutionContextExecutorService = ExecutionContext.fromExecutorService(syncExecutor)
+  lazy val syncExecutor:         SpongeExecutorService           = Sponge.getScheduler.createSyncExecutor(this)
+  lazy val syncExecutionContext: ExecutionContextExecutorService = ExecutionContext.fromExecutorService(syncExecutor)
 
-	final val pluginCmd = new CmdPlugin()(this)
+  final val pluginCmd = new CmdPlugin()(this)
 }
