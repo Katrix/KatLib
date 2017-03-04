@@ -34,7 +34,7 @@ import com.google.inject.Inject
 import io.github.katrix.katlib.helper.Implicits.RichOptional
 import io.github.katrix.katlib.helper.LogHelper
 import io.github.katrix.katlib.lib.LibKatLibPlugin
-import io.github.katrix.katlib.persistant.{CommentedConfigValue, Config}
+import io.github.katrix.katlib.persistant.{CommentedConfigValue, Config, KatLibTypeSerializers}
 
 object KatLib {
 
@@ -62,6 +62,7 @@ class KatLib @Inject()(logger: Logger, @ConfigDir(sharedRoot = true) configDir: 
 
   @Listener
   def gameInit(event: GameInitializationEvent): Unit = {
+    KatLibTypeSerializers.registerScalaSerializers()
     Sponge.getPlatform.getApi.getVersion.toOption match {
       case Some(version) if version != KatLib.CompiledAgainst =>
         LogHelper.warn(s"KatLib is not compiled against $version. KatLib (and plugins depending on it) might break")(this)
