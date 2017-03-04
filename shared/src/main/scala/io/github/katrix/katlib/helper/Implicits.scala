@@ -220,9 +220,9 @@ class MacroImpl(val c: blackbox.Context) {
     checkType(tpe)
 
     val tree = if (tpe.typeArgs.nonEmpty) {
-      q"new com.google.common.reflect.TypeToken[$tpe] {}"
+      q"new _root_.com.google.common.reflect.TypeToken[$tpe] {}"
     } else {
-      q"com.google.common.reflect.TypeToken.of(classOf[$tpe])"
+      q"_root_.com.google.common.reflect.TypeToken.of(classOf[$tpe])"
     }
 
     c.Expr[TypeToken[A]](tree)
