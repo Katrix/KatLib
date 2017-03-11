@@ -99,7 +99,7 @@ object KatLibTypeSerializers {
       val entryType = `type`.resolveType(classOf[Option[_]].getTypeParameters.apply(0))
 
       obj match {
-        case Some(value) => node.setValue(entryType, value)
+        case Some(value) => node.setValue(entryType.asInstanceOf[TypeToken[Any]], value)
         case None        =>
       }
     }
