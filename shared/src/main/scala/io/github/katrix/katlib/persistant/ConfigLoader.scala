@@ -28,25 +28,25 @@ import io.github.katrix.katlib.KatPlugin
 import ninja.leaping.configurate.commented.CommentedConfigurationNode
 import ninja.leaping.configurate.hocon.HoconConfigurationLoader
 
-abstract class ConfigLoader[A <: Config](
-		dir: Path,
-		customOptions: HoconConfigurationLoader.Builder => HoconConfigurationLoader.Builder)(
-		implicit plugin: KatPlugin
+abstract class ConfigLoader[A <: Config](dir: Path, customOptions: HoconConfigurationLoader.Builder => HoconConfigurationLoader.Builder)(
+  implicit plugin:                            KatPlugin
 ) extends ConfigurateBase[A, CommentedConfigurationNode, HoconConfigurationLoader](
-	dir, "config.conf", path => customOptions(HoconConfigurationLoader.builder().setPath(path)).build()) {
+      dir,
+      "config.conf",
+      path => customOptions(HoconConfigurationLoader.builder().setPath(path)).build()
+    ) {
 
-	override def saveData(data: A): Unit = {
+  override def saveData(data: A): Unit = {
 
-		@tailrec
-		def inner(rest: Seq[CommentedConfigValue[_]]): Unit = {
-			if(rest != Nil) {
-				val value = rest.head
-				value.applyToNode(cfgRoot)
-				inner(rest.tail)
-			}
-		}
+    @tailrec
+    def inner(rest: Seq[CommentedConfigValue[_]]): Unit =
+      if (rest != Nil) {
+        val value = rest.head
+        value.applyToNode(cfgRoot)
+        inner(rest.tail)
+      }
 
-		inner(data.seq)
-		saveFile()
-	}
+    inner(data.seq)
+    saveFile()
+  }
 }

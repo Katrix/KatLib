@@ -26,13 +26,13 @@ import io.github.katrix.katlib.helper.Implicits.RichString
 
 object LibCommonCommandKey {
 
-	final val Command  : Text = "command".text
-	final val Player   : Text = "player".text
-	final val World    : Text = "world".text
-	final val Dimension: Text = "dimension".text
-	final val Location : Text = "location".text
-	final val String   : Text = "string".text
-	final val Integer  : Text = "integer".text
-	final val Double   : Text = "fractional".text
-	final val Boolean  : Text = "boolean".text
+  final val Command:   Text = "command".text
+  final val Player:    Text = "player".text
+  final val World:     Text = "world".text
+  final val Dimension: Text = "dimension".text
+  final val Location:  Text = "location".text
+  final val String:    Text = "string".text
+  final val Integer:   Text = "integer".text
+  final val Double:    Text = "fractional".text
+  final val Boolean:   Text = "boolean".text
 }

@@ -29,42 +29,41 @@ import io.github.katrix.katlib.helper.Implicits._
 
 abstract class CommandBase(val parent: Option[CommandBase])(implicit plugin: KatPlugin) extends CommandExecutor {
 
-	def commandSpec: CommandSpec
+  def commandSpec: CommandSpec
 
-	def aliases: Seq[String]
+  def aliases: Seq[String]
 
-	def children: Seq[CommandBase] = Nil
+  def children: Seq[CommandBase] = Nil
 
-	def registerHelp(): Unit = {
-		plugin.pluginCmd.cmdHelp.registerCommandHelp(this)
-		children.foreach(_.registerHelp())
-	}
+  def registerHelp(): Unit = {
+    plugin.pluginCmd.cmdHelp.registerCommandHelp(this)
+    children.foreach(_.registerHelp())
+  }
 
-	protected def registerSubcommands(builder: CommandSpec.Builder): Unit = {
-		children.foreach(command => builder.child(command.commandSpec, command.aliases: _*))
-	}
+  protected def registerSubcommands(builder: CommandSpec.Builder): Unit =
+    children.foreach(command => builder.child(command.commandSpec, command.aliases: _*))
 
-	def nonPlayerError: CommandException = CommandBase.nonPlayerError
-	def playerNotFoundError: CommandException = CommandBase.playerNotFoundError
+  def nonPlayerError:      CommandException = CommandBase.nonPlayerError
+  def playerNotFoundError: CommandException = CommandBase.playerNotFoundError
 
-	def notFoundError(notFound: String, lookFor: String): CommandException = CommandBase.notFoundError(notFound, lookFor)
-	def invalidParameterError: CommandException = CommandBase.invalidParameterError
+  def notFoundError(notFound: String, lookFor: String): CommandException = CommandBase.notFoundError(notFound, lookFor)
+  def invalidParameterError: CommandException = CommandBase.invalidParameterError
 }
 
 object CommandBase {
 
-	def nonPlayerError: CommandException = new CommandException(t"${RED}Only players can use this command")
-	def playerNotFoundError: CommandException = notFoundError("A player", "with that name")
+  def nonPlayerError:      CommandException = new CommandException(t"${RED}Only players can use this command")
+  def playerNotFoundError: CommandException = notFoundError("A player", "with that name")
 
-	def notFoundError(notFound: String, lookFor: String): CommandException = new CommandException(t"$RED$notFound $lookFor was not found")
+  def notFoundError(notFound: String, lookFor: String): CommandException = new CommandException(t"$RED$notFound $lookFor was not found")
 
-	def invalidParameterError: CommandException = new CommandException(t"${RED}Invalid parameter")
+  def invalidParameterError: CommandException = new CommandException(t"${RED}Invalid parameter")
 
-	implicit class RichCommandSpecBuilder(val builder: CommandSpec.Builder) extends AnyVal {
+  implicit class RichCommandSpecBuilder(val builder: CommandSpec.Builder) extends AnyVal {
 
-		def children(commandBase: CommandBase): CommandSpec.Builder = {
-			commandBase.registerSubcommands(builder)
-			builder
-		}
-	}
+    def children(commandBase: CommandBase): CommandSpec.Builder = {
+      commandBase.registerSubcommands(builder)
+      builder
+    }
+  }
 }

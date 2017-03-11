@@ -9,15 +9,13 @@ import org.spongepowered.api.data.persistence.DataSerializer
 
 object Implicits410 {
 
-	implicit class RichDataManager(val dataManager: DataManager) extends AnyVal {
+  implicit class RichDataManager(val dataManager: DataManager) extends AnyVal {
 
-		def registerSerializer[A : ClassTag](serializer: DataSerializer[A]): Unit = {
-			dataManager.registerSerializer(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], serializer)
-		}
+    def registerSerializer[A: ClassTag](serializer: DataSerializer[A]): Unit =
+      dataManager.registerSerializer(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], serializer)
 
-		def getSerializer[A : ClassTag]: Option[DataSerializer[A]] = {
-			dataManager.getSerializer(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
-		}
-	}
+    def getSerializer[A: ClassTag]: Option[DataSerializer[A]] =
+      dataManager.getSerializer(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+  }
 
 }
