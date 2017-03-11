@@ -1,7 +1,7 @@
 def removeSnapshot(str: String): String = if (str.endsWith("-SNAPSHOT")) str.substring(0, str.length - 9) else str
 
 lazy val publishResolver = {
-  val artifactPattern = s"""${file("publish").absolutePath}/[revision]/[artifact]-[revision](-[classifier]).[ext]"""
+  val artifactPattern = s"""${file("publish").absolutePath}/[revision]/A[artifact]-[revision](-[classifier]).[ext]"""
   Resolver.file("publish").artifacts(artifactPattern)
 }
 
@@ -17,13 +17,14 @@ lazy val commonSettings = Seq(
   scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-Xlint", "-Yno-adapted-args", "-Ywarn-dead-code", "-Ywarn-unused-import"),
   crossPaths := false,
   publishTo := Some(publishResolver),
+  publishArtifact in makePom := false,
+  publishArtifact in (Compile, packageBin) := false,
   publishArtifact in (Compile, packageDoc) := false,
   publishArtifact in (Compile, packageSrc) := false,
   artifact in (Compile, assembly) := {
     val art = (artifact in (Compile, assembly)).value
     art.copy(`classifier` = Some("assembly"))
   },
-  addArtifact(artifact in (Compile, assembly), assembly),
   spongePluginInfo := spongePluginInfo.value.copy(
     id = "katlib",
     name = Some("KatLib"),
@@ -35,18 +36,19 @@ lazy val commonSettings = Seq(
   artifactName := { (sv, module, artifact) =>
     s"A${artifact.name}-${module.revision}.${artifact.extension}"
   },
-  assemblyJarName <<= (name, version) map { (name, version) =>
-    s"A$name-assembly-$version.jar"
-  }
-)
+  assemblyJarName := s"A${name.value}-assembly-${version.value}.jar"
+) ++ addArtifact(artifact in (Compile, assembly), assembly)
 
 lazy val katLibShared = (project in file("shared"))
   .enablePlugins(SpongePlugin)
-  .settings(commonSettings: _*)
   .settings(
+    commonSettings,
     name := "KatLib-Shared",
+    publishArtifact := false,
     assembleArtifact := false,
     spongeMetaCreate := false,
+    publish := {},
+    publishLocal := {},
     //Default version, needs to build correctly against all supported versions
     spongeApiVersion := "4.1.0",
     libraryDependencies += "org.scalameta" %% "scalameta" % "1.6.0" % Provided,
@@ -62,22 +64,34 @@ lazy val katLibShared = (project in file("shared"))
 lazy val katLibV410 = (project in file("4.1.0"))
   .enablePlugins(SpongePlugin)
   .dependsOn(katLibShared)
-  .settings(commonSettings: _*)
-  .settings(spongeApiVersion := "4.1.0")
+  .settings(
+    commonSettings,
+    spongeApiVersion := "4.1.0"
+  )
 
 lazy val katLibV500 = (project in file("5.0.0"))
   .enablePlugins(SpongePlugin)
   .dependsOn(katLibShared)
-  .settings(commonSettings: _*)
-  .settings(spongeApiVersion := "5.0.0")
+  .settings(
+    commonSettings,
+    spongeApiVersion := "5.0.0"
+  )
 
 lazy val katLibV600 = (project in file("6.0.0"))
   .enablePlugins(SpongePlugin)
   .dependsOn(katLibShared)
-  .settings(commonSettings: _*)
-  .settings(spongeApiVersion := "6.0.0-SNAPSHOT")
+  .settings(
+    commonSettings,
+    spongeApiVersion := "6.0.0-SNAPSHOT"
+  )
 
 lazy val katLibRoot = (project in file("."))
-  .settings(publishArtifact := false)
+  .settings(
+    publishArtifact := false,
+    assembleArtifact := false,
+    spongeMetaCreate := false,
+    publish := {},
+    publishLocal := {}
+  )
   .disablePlugins(AssemblyPlugin)
   .aggregate(katLibShared, katLibV410, katLibV500, katLibV600)
