@@ -1,7 +1,12 @@
 def removeSnapshot(str: String): String = if (str.endsWith("-SNAPSHOT")) str.substring(0, str.length - 9) else str
 
 //Will stuff go bad if this isn't a key?
-lazy val isJitpack = sys.props.getOrElse("JITPACK", "false").toBoolean
+lazy val isJitpack = {
+  val b = sys.props.getOrElse("JITPACK", "false").toBoolean
+  println(s"Is JITPACK: $b")
+  println(s"JITPACK defined = ${sys.props.get("JITPACK").isDefined}")
+  b
+}
 
 lazy val publishResolver = {
   val artifactPattern = s"""${file("publish").absolutePath}/[revision]/A[artifact]-[revision](-[classifier]).[ext]"""
