@@ -57,25 +57,25 @@ object HoconFileStorage {
       comment <- c.get[String]("comment").toOption
       value   <- c.downField("value").focus
     } yield {
-      value match {
-        case _ if value.isString  => ConfigValueFactory.fromAnyRef(value.asString.get, comment)
-        case _ if value.isNumber  => ConfigValueFactory.fromAnyRef(value.asNumber.get.toDouble, comment)
-        case _ if value.isBoolean => ConfigValueFactory.fromAnyRef(value.asBoolean.get, comment)
-        case _ if value.isObject  => ConfigValueFactory.fromMap(value.asObject.get.toMap.mapValues(jsonToHocon).asJava, comment)
-        case _ if value.isArray   => ConfigValueFactory.fromIterable(value.asArray.get.map(jsonToHocon).asJava, comment)
-        case _ if value.isNull    => ConfigValueFactory.fromAnyRef(null, comment)
-      }
+      value.fold(
+        ConfigValueFactory.fromAnyRef(null, comment),
+        bool => ConfigValueFactory.fromAnyRef(bool, comment),
+        num => ConfigValueFactory.fromAnyRef(num.toDouble, comment),
+        str => ConfigValueFactory.fromAnyRef(str, comment),
+        arr => ConfigValueFactory.fromIterable(arr.map(jsonToHocon).asJava, comment),
+        obj => ConfigValueFactory.fromMap(obj.toMap.mapValues(jsonToHocon).asJava, comment)
+      )
     }
 
     res.getOrElse {
-      json match {
-        case _ if json.isString  => ConfigValueFactory.fromAnyRef(json.asString.get)
-        case _ if json.isNumber  => ConfigValueFactory.fromAnyRef(json.asNumber.get.toDouble)
-        case _ if json.isBoolean => ConfigValueFactory.fromAnyRef(json.asBoolean.get)
-        case _ if json.isObject  => ConfigValueFactory.fromMap(json.asObject.get.toMap.mapValues(jsonToHocon).asJava)
-        case _ if json.isArray   => ConfigValueFactory.fromIterable(json.asArray.get.map(jsonToHocon).asJava)
-        case _ if json.isNull    => ConfigValueFactory.fromAnyRef(null)
-      }
+      json.fold(
+        ConfigValueFactory.fromAnyRef(null),
+        bool => ConfigValueFactory.fromAnyRef(bool),
+        num => ConfigValueFactory.fromAnyRef(num.toDouble),
+        str => ConfigValueFactory.fromAnyRef(str),
+        arr => ConfigValueFactory.fromIterable(arr.map(jsonToHocon).asJava),
+        obj => ConfigValueFactory.fromMap(obj.toMap.mapValues(jsonToHocon).asJava)
+      )
     }
   }
 }
