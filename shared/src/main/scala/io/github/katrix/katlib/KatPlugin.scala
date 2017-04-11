@@ -29,7 +29,6 @@ import org.spongepowered.api.scheduler.SpongeExecutorService
 
 import io.github.katrix.katlib.command.CmdPlugin
 import io.github.katrix.katlib.helper.Implicits.PluginContainer
-import io.github.katrix.katlib.persistant.Config
 
 trait KatPlugin {
 
@@ -47,9 +46,5 @@ trait KatPlugin {
 		* A root command providing stuff like the help and info command
 		*/
   def pluginCmd: CmdPlugin
-
-  /**
-		* The config for the plugin
-		*/
-  def config: Config
+  
 }

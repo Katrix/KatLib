@@ -24,6 +24,8 @@ lazy val noJitpackSettings = Seq(
   assemblyJarName := s"A${name.value}-assembly-${version.value}.jar"
 ) ++ addArtifact(artifact in (Compile, assembly), assembly)
 
+val circeVersion = "0.7.0"
+
 lazy val commonSettings = Seq(
   name := s"KatLib-${removeSnapshot(spongeApiVersion.value)}",
   organization := "io.github.katrix",
@@ -31,7 +33,12 @@ lazy val commonSettings = Seq(
   scalaVersion := "2.12.1",
   assemblyShadeRules in assembly := Seq(
     ShadeRule.rename("scala.**"     -> "io.github.katrix.katlib.shade.scala.@1").inAll,
-    ShadeRule.rename("shapeless.**" -> "io.github.katrix.katlib.shade.shapeless.@1").inAll
+    ShadeRule.rename("shapeless.**" -> "io.github.katrix.katlib.shade.shapeless.@1").inAll,
+    ShadeRule.rename("io.circe.**" -> "io.github.katrix.katlib.shade.io.circe.@1").inAll,
+    ShadeRule.rename("cats.**" -> "io.github.katrix.katlib.shade.io.cats.@1").inAll,
+    ShadeRule.rename("simulacrum.**" -> "io.github.katrix.katlib.shade.simulacrum.@1").inAll,
+    ShadeRule.rename("machinist.**" -> "io.github.katrix.katlib.shade.machinist.@1").inAll,
+    ShadeRule.rename("jawn.**" -> "io.github.katrix.katlib.shade.jawn.@1").inAll
   ),
   scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-Xlint", "-Yno-adapted-args", "-Ywarn-dead-code", "-Ywarn-unused-import"),
   crossPaths := false,
@@ -42,7 +49,9 @@ lazy val commonSettings = Seq(
     authors = Seq("Katrix"),
     dependencies = Set(DependencyInfo("spongeapi", Some(removeSnapshot(spongeApiVersion.value))))
   ),
-  libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.2" exclude ("org.typelevel", "macro-compat_2.12") //Don't think macro-compat needs to be in the jar
+  libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.2" exclude ("org.typelevel", "macro-compat_2.12"), //Don't think macro-compat needs to be in the jar
+  libraryDependencies ++= Seq("io.circe" %% "circe-core", "io.circe" %% "circe-generic-extras", "io.circe" %% "circe-parser")
+    .map(_ % circeVersion exclude ("org.typelevel", "macro-compat_2.12") exclude ("org.scala-lang", "scala-reflect"))
 )
 
 lazy val usedSettings = if(isJitpack) commonSettings else commonSettings ++ noJitpackSettings
