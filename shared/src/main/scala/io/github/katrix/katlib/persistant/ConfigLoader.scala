@@ -37,16 +37,7 @@ abstract class ConfigLoader[A <: Config](dir: Path, customOptions: HoconConfigur
     ) {
 
   override def saveData(data: A): Unit = {
-
-    @tailrec
-    def inner(rest: Seq[CommentedConfigValue[_]]): Unit =
-      if (rest != Nil) {
-        val value = rest.head
-        value.applyToNode(cfgRoot)
-        inner(rest.tail)
-      }
-
-    inner(data.seq)
+    data.seq.foreach(_.applyToNode(cfgRoot))
     saveFile()
   }
 }
