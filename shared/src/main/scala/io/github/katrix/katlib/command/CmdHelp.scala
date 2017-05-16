@@ -22,12 +22,12 @@ package io.github.katrix.katlib.command
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable
 
 import org.spongepowered.api.Sponge
 import org.spongepowered.api.command.args.{CommandContext, GenericArguments}
 import org.spongepowered.api.command.spec.CommandSpec
-import org.spongepowered.api.command.{CommandResult, CommandSource}
+import org.spongepowered.api.command.{CommandException, CommandResult, CommandSource}
 import org.spongepowered.api.service.pagination.PaginationService
 import org.spongepowered.api.text.Text
 import org.spongepowered.api.text.action.TextActions
@@ -37,48 +37,48 @@ import org.spongepowered.api.text.format.{TextColors, TextStyles}
 import io.github.katrix.katlib.KatPlugin
 import io.github.katrix.katlib.helper.Implicits._
 import io.github.katrix.katlib.helper.LogHelper
-import io.github.katrix.katlib.lib.LibCommonCommandKey
+import io.github.katrix.katlib.lib.LibCommonTCommandKey
 
 final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends CommandBase(Some(cmdPlugin)) {
 
-  private val registeredCommands = new ArrayBuffer[CommandBase]
-  private val familyList         = new ArrayBuffer[Seq[CommandBase]]
+  private val commandParents = new mutable.HashMap[CommandBase, Seq[CommandBase]]
 
-  //We only compute the command aliases once, as they really shouldn't change, and it's a heavy computation for just getting help
-  lazy private val commandsAliases = familyList
-    .flatMap(seq => {
-      val head = seq.head
+  lazy private val commandsAliases = commandParents.flatMap { case (topCmd, xs) =>
+    val named = xs.map(_.aliases)
 
-      seq.tail.foldLeft(head.aliases.map(str => str -> head))(
-        (acc, cmd) =>
-          for {
-            (str, newCmd) <- acc
-            cmdName       <- cmd.aliases
-          } yield s"$cmdName $str" -> newCmd
-      )
-    })
-    .toMap
+    val allAliases = named.reduce { (names, acc) =>
+      for {
+        cmdName <- names
+        str <- acc
+      } yield s"$cmdName $str"
+    }.sorted
+
+    allAliases.map(_ -> topCmd)
+  }
 
   def execute(src: CommandSource, args: CommandContext): CommandResult = {
-    args.getOne[String](LibCommonCommandKey.Command).toOption match {
+    args.one(LibCommonTCommandKey.Command) match {
       case None =>
         val pages = Sponge.getGame.getServiceManager.provideUnchecked(classOf[PaginationService]).builder
         pages.title(t"$RED${plugin.container.name} Help")
 
-        val text = registeredCommands.map(commandBase => getCommandHelp(commandBase, src))
-        text.sorted
+        val text = commandParents.keys.toSeq.flatMap(commandBase => getCommandHelp(commandBase, src)).sorted
         pages.contents(text.asJavaCollection)
         pages.sendTo(src)
+        CommandResult.success()
       case Some(commandName) =>
-        commandsAliases.get(commandName) match {
-          case None =>
-            src.sendMessage(t"${RED}Command not found")
-            return CommandResult.empty
-          case Some(command) => src.sendMessage(getCommandHelp(command, src))
+        val data = for {
+          cmd <- commandsAliases.get(commandName).toRight(new CommandException(t"${RED}Command not found"))
+          help <- getCommandHelp(cmd, src).toRight(new CommandException(t"${RED}Couldn't find any help for that command"))
+        } yield help
+
+        data match {
+          case Right(help) =>
+            src.sendMessage(help)
+            CommandResult.success()
+          case Left(e) => throw e
         }
     }
-
-    CommandResult.success
   }
 
   def commandSpec: CommandSpec =
@@ -86,7 +86,7 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Co
       .description(t"This command right here.")
       .extendedDescription(t"Use /${plugin.container.id} help <command> <subcommand> \nto get help for a specific command")
       .permission(s"${plugin.container.id}.help")
-      .arguments(GenericArguments.optional(GenericArguments.remainingJoinedStrings(LibCommonCommandKey.Command)))
+      .arguments(GenericArguments.optional(GenericArguments.remainingJoinedStrings(LibCommonTCommandKey.Command)))
       .executor(this)
       .build
 
@@ -96,42 +96,33 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Co
 		* Creates a written command that is what needs to be entered when
 		* the specified command is passed in.
 		*/
-  private def stringCommand(command: CommandBase): String = {
-
-    //StringBuilder here for performance
-    @tailrec
-    def inner(optParent: Option[CommandBase], builder: StringBuilder): String = optParent match {
-      case None                => builder.insert(0, '/').mkString.trim
-      case Some(commandParent) => inner(commandParent.parent, builder.insert(0, s"${commandParent.aliases.head} "))
-    }
-
-    inner(Some(command), new StringBuilder)
-  }
+  private def stringCommand(command: CommandBase): Option[String] =
+    commandParents.get(command).map(seq => s"/${seq.map(_.aliases.head).mkString(" ")}")
 
   /**
 		* Creates a help [[Text]] based on the passed in command
 		*/
-  private def getCommandHelp(commandBase: CommandBase, src: CommandSource): Text = {
-    val strCommand  = stringCommand(commandBase)
-    val commandSpec = commandBase.commandSpec
+  private def getCommandHelp(commandBase: CommandBase, src: CommandSource): Option[Text] = {
+    stringCommand(commandBase).map { strCommand =>
+      val commandSpec = commandBase.commandSpec
 
-    val commandText = Text.builder().append(Text.of(TextColors.GREEN, TextStyles.UNDERLINE, strCommand))
-    commandText.onHover(TextActions.showText(commandSpec.getHelp(src).orElse(commandSpec.getUsage(src))))
-    commandText.onClick(TextActions.suggestCommand(strCommand))
-    Text.of(commandText, " ", commandSpec.getShortDescription(src).orElse(commandSpec.getUsage(src)))
+      val commandText = Text.builder().append(Text.of(TextColors.GREEN, TextStyles.UNDERLINE, strCommand))
+      commandText.onHover(TextActions.showText(commandSpec.getHelp(src).orElse(commandSpec.getUsage(src))))
+      commandText.onClick(TextActions.suggestCommand(strCommand))
+      Text.of(commandText, " ", commandSpec.getShortDescription(src).orElse(commandSpec.getUsage(src)))
+    }
   }
 
   private[command] def registerCommandHelp(command: CommandBase) {
 
     @tailrec
-    def commandFamily(optParent: Option[CommandBase], currentFamily: Seq[CommandBase]): Seq[CommandBase] = optParent match {
-      case None           => currentFamily
-      case Some(relative) => commandFamily(relative.parent, currentFamily :+ relative)
+    def commandParent(optParent: Option[CommandBase], acc: List[CommandBase]): List[CommandBase] = optParent match {
+      case Some(cmdParent) => commandParent(cmdParent.parent, cmdParent :: acc)
+      case None => acc
     }
 
-    val family = commandFamily(Some(command), Seq())
-    LogHelper.trace(s"Registering help command: $family")
-    registeredCommands += command
-    familyList += family
+    val parents = commandParent(Some(command), Nil)
+    LogHelper.trace(s"Registering help command: $parents")
+    commandParents.put(command, parents)
   }
 }
