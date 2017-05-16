@@ -1,9 +1,9 @@
 package io.github.katrix.katlib.serializer
 
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 
 import shapeless._
-import shapeless.labelled.{field, FieldType}
+import shapeless.labelled.{FieldType, field}
 
 object ConfigSerializerBase {
 
@@ -100,11 +100,17 @@ object ConfigSerializerBase {
         case Inr(tail) => st.value.write(tail, node)
       }
 
-      override def read(node: ConfigNode): Try[FieldType[Name, Head] :+: Tail] =
-        if (strSer.read(node.getNode("type")).toOption.contains(key.value.name))
-          sh.value.read(node.getNode(key.value.name)).map(h => Inl(field[Name](h)))
-        else
-          st.value.read(node).map(t => Inr(t))
+      override def read(node: ConfigNode): Try[FieldType[Name, Head] :+: Tail] = {
+        strSer.read(node.getNode("type")) match {
+          case Success(tpe) =>
+            if (tpe == key.value.name)
+              sh.value.read(node).map(h => Inl(field[Name](h)))
+            else
+              st.value.read(node).map(t => Inr(t))
+
+          case Failure(e) => Failure(e)
+        }
+      }
     }
 
     implicit def caseSerializer[A, Repr](implicit gen: LabelledGeneric.Aux[A, Repr], ser: Lazy[ConfigSerializer[Repr]]): ConfigSerializer[A] =
