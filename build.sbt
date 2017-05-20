@@ -27,7 +27,7 @@ lazy val noJitpackSettings = Seq(
 lazy val commonSettings = Seq(
   name := s"KatLib-${removeSnapshot(spongeApiVersion.value)}",
   organization := "io.github.katrix",
-  version := "2.1.0",
+  version := "2.2.0",
   scalaVersion := "2.12.1",
   assemblyShadeRules in assembly := Seq(
     ShadeRule.rename("scala.**"     -> "io.github.katrix.katlib.shade.scala.@1").inAll,
@@ -86,7 +86,7 @@ lazy val katLibV600 = (project in file("6.0.0"))
   .dependsOn(katLibShared)
   .settings(
     usedSettings,
-    spongeApiVersion := "6.0.0-SNAPSHOT"
+    spongeApiVersion := "6.0.0"
   )
 
 lazy val katLibRoot = (project in file("."))
