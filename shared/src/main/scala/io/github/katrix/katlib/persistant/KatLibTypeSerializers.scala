@@ -1,6 +1,9 @@
 package io.github.katrix.katlib.persistant
 
 import scala.collection.JavaConverters._
+import scala.collection.generic.CanBuildFrom
+import scala.language.higherKinds
+import scala.reflect.ClassTag
 
 import com.google.common.collect.{ImmutableList, ImmutableMap}
 import com.google.common.reflect.TypeToken
@@ -13,40 +16,50 @@ object KatLibTypeSerializers {
 
   def registerScalaSerializers(): Unit = {
     val serializers = TypeSerializers.getDefaultSerializers
-    serializers.registerType(new TypeToken[Iterable[_]]()     {}, iterable)
-    serializers.registerType(new TypeToken[Map[_, _]]()       {}, map)
-    serializers.registerType(new TypeToken[(_, _)]()          {}, tuple2)
-    serializers.registerType(new TypeToken[(_, _, _)]()       {}, tuple3)
-    serializers.registerType(new TypeToken[(_, _, _, _)]()    {}, tuple4)
-    serializers.registerType(new TypeToken[(_, _, _, _, _)]() {}, tuple5)
-  }
 
-  //Mostly copy of the java list serializer
-  val iterable: TypeSerializer[Iterable[_]] = new TypeSerializer[Iterable[_]] {
-    override def deserialize(`type`: TypeToken[_], node: ConfigurationNode): Iterable[_] = {
-      val entryType   = `type`.resolveType(classOf[Iterable[_]].getTypeParameters.apply(0))
-      val entrySerial = node.getOptions.getSerializers.get(entryType)
-      if (entrySerial == null) throw new ObjectMappingException(s"No applicable type serializer for type $entryType")
-
-      if (node.hasListChildren) {
-        val values = node.getChildrenList.asScala
-        values.map(n => entrySerial.deserialize(entryType, n))
-      } else {
-        val unwrappedVal = node.getValue
-        if (unwrappedVal != null) Seq(entrySerial.deserialize(entryType, node))
-        else Nil
-      }
+    def registerSerializer[Type](serializer: TypeSerializer[Type], typeToken: TypeToken[Type]): Unit = {
+      serializers.registerType(typeToken, serializer)
     }
 
-    override def serialize(`type`: TypeToken[_], obj: Iterable[_], node: ConfigurationNode): Unit = {
-      val entryType   = `type`.resolveType(classOf[Iterable[_]].getTypeParameters.apply(0))
+    registerSerializer(iterableSerializer[Iterable], new TypeToken[Iterable[_]] {})
+    registerSerializer(iterableSerializer[Seq], new TypeToken[Seq[_]] {})
+    registerSerializer(option, new TypeToken[Option[_]] {})
+    registerSerializer(map, new TypeToken[Map[_, _]] {})
+    registerSerializer(tuple2, new TypeToken[(_, _)] {})
+    registerSerializer(tuple3, new TypeToken[(_, _, _)] {})
+    registerSerializer(tuple4, new TypeToken[(_, _, _, _)] {})
+    registerSerializer(tuple5, new TypeToken[(_, _, _, _, _)] {})
+  }
+
+  def iterableSerializer[Coll[A] <: Iterable[A]](implicit tag: ClassTag[Coll[_]],
+                                                 cbf:          CanBuildFrom[Nothing, Any, Coll[_]]): TypeSerializer[Coll[_]] = new TypeSerializer[Coll[_]] {
+    override def serialize(`type`: TypeToken[_], obj: Coll[_], node: ConfigurationNode): Unit = {
+      val entryType   = `type`.resolveType(tag.runtimeClass.getTypeParameters.apply(0))
       val entrySerial = node.getOptions.getSerializers.get(entryType)
-      if (entrySerial == null) throw new ObjectMappingException(s"No applicable type serializer for type $entryType")
+      if (entrySerial == null) throw new ObjectMappingException(s"No applicable type serializer for type $entryType when trying to serialize ${`type`}")
 
       node.setValue(ImmutableList.of)
       for (ent <- obj) {
         //Lot's of ugly casts
         entrySerial.asInstanceOf[TypeSerializer[Any]].serialize(entryType.asInstanceOf[TypeToken[Any]], ent, node.getAppendedNode)
+      }
+    }
+
+    override def deserialize(`type`: TypeToken[_], node: ConfigurationNode): Coll[_] = {
+      val entryType   = `type`.resolveType(tag.runtimeClass.getTypeParameters.apply(0))
+      val entrySerial = node.getOptions.getSerializers.get(entryType)
+      if (entrySerial == null) throw new ObjectMappingException(s"No applicable type serializer for type $entryType when trying to deserialize ${`type`}")
+
+      if (node.hasListChildren) {
+        val children = node.getChildrenList.asScala
+        val builder  = cbf()
+        builder.sizeHint(children)
+        builder ++= children.map(n => entrySerial.deserialize(entryType, n))
+        builder.result()
+      } else {
+        val unwrappedVal = node.getValue
+        if (unwrappedVal != null) (cbf() += entrySerial.deserialize(entryType, node)).result()
+        else cbf().result()
       }
     }
   }
@@ -89,7 +102,7 @@ object KatLibTypeSerializers {
     }
   }
 
-  val option = new TypeSerializer[Option[_]] {
+  val option: TypeSerializer[Option[_]] = new TypeSerializer[Option[_]] {
     override def deserialize(`type`: TypeToken[_], node: ConfigurationNode): Option[_] = {
       val entryType = `type`.resolveType(classOf[Option[_]].getTypeParameters.apply(0))
 

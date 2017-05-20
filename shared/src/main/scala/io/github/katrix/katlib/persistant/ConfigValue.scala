@@ -69,11 +69,11 @@ object ConfigValue {
     Try(Option(node.getNode(existing.path: _*).getValue(existing.typeToken)).get)
       .map(found => existing.value = found)
       .recover {
-        case _: ObjectMappingException =>
-          LogHelper.error(s"Failed to deserialize value of ${existing.path.mkString(", ")}, using the default instead")
+        case e: ObjectMappingException =>
+          LogHelper.error(s"Failed to deserialize value of ${existing.path.mkString(".")}, using the default instead", e)
           existing
         case _: NoSuchElementException =>
-          LogHelper.warn(s"No value found for ${existing.path.mkString(", ")}, using default instead")
+          LogHelper.warn(s"No value found for ${existing.path.mkString(".")}, using default instead")
           existing
       }
       .get

@@ -22,8 +22,6 @@ package io.github.katrix.katlib.persistant
 
 import java.nio.file.Path
 
-import scala.annotation.tailrec
-
 import io.github.katrix.katlib.KatPlugin
 import ninja.leaping.configurate.commented.CommentedConfigurationNode
 import ninja.leaping.configurate.hocon.HoconConfigurationLoader
@@ -37,16 +35,7 @@ abstract class ConfigLoader[A <: Config](dir: Path, customOptions: HoconConfigur
     ) {
 
   override def saveData(data: A): Unit = {
-
-    @tailrec
-    def inner(rest: Seq[CommentedConfigValue[_]]): Unit =
-      if (rest != Nil) {
-        val value = rest.head
-        value.applyToNode(cfgRoot)
-        inner(rest.tail)
-      }
-
-    inner(data.seq)
+    data.seq.foreach(_.applyToNode(cfgRoot))
     saveFile()
   }
 }

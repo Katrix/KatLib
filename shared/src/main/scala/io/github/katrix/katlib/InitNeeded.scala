@@ -25,6 +25,8 @@ import io.github.katrix.katlib.helper.LogHelper
 /**
 	* A small trait to easily load some class at some later point
 	*/
+@deprecated(message = "Please don't use this. It's bad", since = "KatLib 2.2")
+@deprecatedInheritance(message = "Please don't use this. It's bad", since = "KatLib 2.2")
 trait InitNeeded {
 
   def init()(implicit plugin: KatPlugin): Unit = LogHelper.trace(s"Loaded ${getClass.getName}")

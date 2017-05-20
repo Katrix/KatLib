@@ -32,13 +32,14 @@ import io.github.katrix.katlib.helper.Implicits._
 final class CmdPlugin(implicit plugin: KatPlugin) extends CommandBase(None) {
 
   val cmdHelp = new CmdHelp(this)
+  var extraChildren = Seq.empty[CommandBase]
 
   override def execute(src: CommandSource, args: CommandContext): CommandResult = {
     val container = plugin.container
     val text      = Text.builder(container.name).color(TextColors.YELLOW)
     container.version.foreach(version => text.append(t" v.$version"))
-    container.description.foreach(description => text.append(t"\n$description"))
-    container.url.foreach(url => text.append(t"\n$url"))
+    container.description.foreach(description => text.append(Text.NEW_LINE).append(t"$description"))
+    container.url.foreach(url => text.append(Text.NEW_LINE).append(t"$url"))
     if (container.authors.nonEmpty) text.append(t"Created by: ${container.authors.mkString(", ")}")
 
     src.sendMessage(text.build())
@@ -54,7 +55,7 @@ final class CmdPlugin(implicit plugin: KatPlugin) extends CommandBase(None) {
       .children(this)
       .build()
 
-  override def children: Seq[CommandBase] = Seq(cmdHelp)
+  override def children: Seq[CommandBase] = cmdHelp +: extraChildren
 
   override def aliases: Seq[String] = Seq(s"${plugin.container.id}", s"${plugin.container.name}")
 }
