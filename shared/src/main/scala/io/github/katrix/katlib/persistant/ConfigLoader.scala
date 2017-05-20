@@ -22,8 +22,6 @@ package io.github.katrix.katlib.persistant
 
 import java.nio.file.Path
 
-import scala.annotation.tailrec
-
 import io.github.katrix.katlib.KatPlugin
 import ninja.leaping.configurate.commented.CommentedConfigurationNode
 import ninja.leaping.configurate.hocon.HoconConfigurationLoader
