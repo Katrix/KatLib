@@ -57,12 +57,13 @@ class KatLib @Inject()(logger: Logger, @ConfigDir(sharedRoot = true) configDir: 
   }
 
   @Listener
-  def gameConstruct(event: GameConstructionEvent): Unit =
+  def gameConstruct(event: GameConstructionEvent): Unit = {
     KatLib._plugin = this
+    KatLibTypeSerializers.registerScalaSerializers()
+  }
 
   @Listener
   def gameInit(event: GameInitializationEvent): Unit = {
-    KatLibTypeSerializers.registerScalaSerializers()
     Sponge.getPlatform.getApi.getVersion.toOption match {
       case Some(version) if version != KatLib.CompiledAgainst =>
         LogHelper.warn(s"KatLib is not compiled against $version. KatLib (and plugins depending on it) might break")(this)
