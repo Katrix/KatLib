@@ -20,10 +20,10 @@ object TypeSerializerImpl {
 
   implicit class ConfigurationNodeWrapper(val node: ConfigurationNode) extends ConfigNode {
 
-    override def getParent: ConfigNode = node.getParent
-    override def getNode(string: String*): ConfigNode = node.getNode(string: _*)
-    override def hasNode(string: String*): Boolean    = node.getNode(string: _*).isVirtual
-    override def getChildren: Seq[ConfigNode] = node.getChildrenList.asScala.map(new ConfigurationNodeWrapper(_))
+    override def getParent:                ConfigNode      = node.getParent
+    override def getNode(string: String*): ConfigNode      = node.getNode(string: _*)
+    override def hasNode(string: String*): Boolean         = node.getNode(string: _*).isVirtual
+    override def getChildren:              Seq[ConfigNode] = node.getChildrenList.asScala.map(new ConfigurationNodeWrapper(_))
 
     override def read[A: ConfigSerializer]: Try[A] = {
       val serializer = implicitly[ConfigSerializer[A]]
@@ -46,7 +46,7 @@ object TypeSerializerImpl {
       }
     }
 
-    def writeValue(value:    AnyRef): ConfigNode = node.setValue(value)
+    def writeValue(value: AnyRef):                        ConfigNode = node.setValue(value)
     def writeValue[A](value: A, typeToken: TypeToken[A]): ConfigNode = node.setValue(typeToken, value)
 
     override def writeList[A: ConfigSerializer](value: Seq[A]): ConfigNode =
@@ -61,7 +61,7 @@ object TypeSerializerImpl {
         .read(node)
         .recoverWith {
           case e: ObjectMappingException => Failure(e)
-          case e => Failure(new ObjectMappingException(e))
+          case e                         => Failure(new ObjectMappingException(e))
         }
         .get
   }
@@ -98,15 +98,15 @@ object TypeSerializerImpl {
   }
 
   implicit def stringMapSerializer[A: ConfigSerializer]: ConfigSerializer[Map[String, A]] = mapSerializer[String, A] { case str: String => str }
-  implicit def byteMapSerializer[A:   ConfigSerializer]: ConfigSerializer[Map[Byte, A]] =
+  implicit def byteMapSerializer[A: ConfigSerializer]: ConfigSerializer[Map[Byte, A]] =
     mapSerializer[Byte, A, JByte] {
-      case byte: JByte                               => byte.byteValue()
-      case str:  String if NumberUtils.isNumber(str) => str.toByte
+      case byte: JByte                              => byte.byteValue()
+      case str: String if NumberUtils.isNumber(str) => str.toByte
     }(Byte.box)
   implicit def shortMapSerializer[A: ConfigSerializer]: ConfigSerializer[Map[Short, A]] =
     mapSerializer[Short, A, JShort] {
-      case short: JShort                              => short.shortValue()
-      case str:   String if NumberUtils.isNumber(str) => str.toShort
+      case short: JShort                            => short.shortValue()
+      case str: String if NumberUtils.isNumber(str) => str.toShort
     }(Short.box)
   implicit def intMapSerializer[A: ConfigSerializer]: ConfigSerializer[Map[Int, A]] =
     mapSerializer[Int, A, JInt] {
@@ -115,18 +115,18 @@ object TypeSerializerImpl {
     }(Int.box)
   implicit def longMapSerializer[A: ConfigSerializer]: ConfigSerializer[Map[Long, A]] =
     mapSerializer[Long, A, JLong] {
-      case long: JLong                               => long.longValue()
-      case str:  String if NumberUtils.isNumber(str) => str.toLong
+      case long: JLong                              => long.longValue()
+      case str: String if NumberUtils.isNumber(str) => str.toLong
     }(Long.box)
   implicit def floatMapSerializer[A: ConfigSerializer]: ConfigSerializer[Map[Float, A]] =
     mapSerializer[Float, A, JFloat] {
-      case float: JFloat                              => float.floatValue()
-      case str:   String if NumberUtils.isNumber(str) => str.toFloat
+      case float: JFloat                            => float.floatValue()
+      case str: String if NumberUtils.isNumber(str) => str.toFloat
     }(Float.box)
   implicit def doubleMapSerializer[A: ConfigSerializer]: ConfigSerializer[Map[Double, A]] =
     mapSerializer[Double, A, JDouble] {
-      case double: JDouble                             => double.doubleValue()
-      case str:    String if NumberUtils.isNumber(str) => str.toDouble
+      case double: JDouble                          => double.doubleValue()
+      case str: String if NumberUtils.isNumber(str) => str.toDouble
     }(Double.box)
 
   def fromTypeSerializer[A](typeSerializer: TypeSerializer[A], clazz: Class[A]): ConfigSerializer[A] = new ConfigSerializer[A] {

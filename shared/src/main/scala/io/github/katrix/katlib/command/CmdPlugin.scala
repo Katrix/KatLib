@@ -31,7 +31,7 @@ import io.github.katrix.katlib.helper.Implicits._
 
 final class CmdPlugin(implicit plugin: KatPlugin) extends CommandBase(None) {
 
-  val cmdHelp = new CmdHelp(this)
+  val cmdHelp       = new CmdHelp(this)
   var extraChildren = Seq.empty[CommandBase]
 
   override def execute(src: CommandSource, args: CommandContext): CommandResult = {

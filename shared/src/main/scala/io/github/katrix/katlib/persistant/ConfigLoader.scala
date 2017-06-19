@@ -27,7 +27,7 @@ import ninja.leaping.configurate.commented.CommentedConfigurationNode
 import ninja.leaping.configurate.hocon.HoconConfigurationLoader
 
 abstract class ConfigLoader[A <: Config](dir: Path, customOptions: HoconConfigurationLoader.Builder => HoconConfigurationLoader.Builder)(
-  implicit plugin:                            KatPlugin
+    implicit plugin: KatPlugin
 ) extends ConfigurateBase[A, CommentedConfigurationNode, HoconConfigurationLoader](
       dir,
       "config.conf",

@@ -17,26 +17,28 @@ object KatLibTypeSerializers {
   def registerScalaSerializers(): Unit = {
     val serializers = TypeSerializers.getDefaultSerializers
 
-    def registerSerializer[Type](serializer: TypeSerializer[Type], typeToken: TypeToken[Type]): Unit = {
+    def registerSerializer[Type](serializer: TypeSerializer[Type], typeToken: TypeToken[Type]): Unit =
       serializers.registerType(typeToken, serializer)
-    }
 
     registerSerializer(iterableSerializer[Iterable], new TypeToken[Iterable[_]] {})
-    registerSerializer(iterableSerializer[Seq], new TypeToken[Seq[_]] {})
-    registerSerializer(option, new TypeToken[Option[_]] {})
-    registerSerializer(map, new TypeToken[Map[_, _]] {})
-    registerSerializer(tuple2, new TypeToken[(_, _)] {})
-    registerSerializer(tuple3, new TypeToken[(_, _, _)] {})
-    registerSerializer(tuple4, new TypeToken[(_, _, _, _)] {})
-    registerSerializer(tuple5, new TypeToken[(_, _, _, _, _)] {})
+    registerSerializer(iterableSerializer[Seq], new TypeToken[Seq[_]]           {})
+    registerSerializer(option, new TypeToken[Option[_]]                         {})
+    registerSerializer(map, new TypeToken[Map[_, _]]                            {})
+    registerSerializer(tuple2, new TypeToken[(_, _)]                            {})
+    registerSerializer(tuple3, new TypeToken[(_, _, _)]                         {})
+    registerSerializer(tuple4, new TypeToken[(_, _, _, _)]                      {})
+    registerSerializer(tuple5, new TypeToken[(_, _, _, _, _)]                   {})
   }
 
-  def iterableSerializer[Coll[A] <: Iterable[A]](implicit tag: ClassTag[Coll[_]],
-                                                 cbf:          CanBuildFrom[Nothing, Any, Coll[_]]): TypeSerializer[Coll[_]] = new TypeSerializer[Coll[_]] {
+  def iterableSerializer[Coll[A] <: Iterable[A]](
+      implicit tag: ClassTag[Coll[_]],
+      cbf: CanBuildFrom[Nothing, Any, Coll[_]]
+  ): TypeSerializer[Coll[_]] = new TypeSerializer[Coll[_]] {
     override def serialize(`type`: TypeToken[_], obj: Coll[_], node: ConfigurationNode): Unit = {
       val entryType   = `type`.resolveType(tag.runtimeClass.getTypeParameters.apply(0))
       val entrySerial = node.getOptions.getSerializers.get(entryType)
-      if (entrySerial == null) throw new ObjectMappingException(s"No applicable type serializer for type $entryType when trying to serialize ${`type`}")
+      if (entrySerial == null)
+        throw new ObjectMappingException(s"No applicable type serializer for type $entryType when trying to serialize ${`type`}")
 
       node.setValue(ImmutableList.of)
       for (ent <- obj) {
@@ -48,7 +50,8 @@ object KatLibTypeSerializers {
     override def deserialize(`type`: TypeToken[_], node: ConfigurationNode): Coll[_] = {
       val entryType   = `type`.resolveType(tag.runtimeClass.getTypeParameters.apply(0))
       val entrySerial = node.getOptions.getSerializers.get(entryType)
-      if (entrySerial == null) throw new ObjectMappingException(s"No applicable type serializer for type $entryType when trying to deserialize ${`type`}")
+      if (entrySerial == null)
+        throw new ObjectMappingException(s"No applicable type serializer for type $entryType when trying to deserialize ${`type`}")
 
       if (node.hasListChildren) {
         val children = node.getChildrenList.asScala

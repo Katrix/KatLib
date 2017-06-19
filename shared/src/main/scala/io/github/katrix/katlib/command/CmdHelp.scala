@@ -43,17 +43,18 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Co
 
   private val commandParents = new mutable.HashMap[CommandBase, Seq[CommandBase]]
 
-  lazy private val commandsAliases = commandParents.flatMap { case (topCmd, xs) =>
-    val named = xs.map(_.aliases)
+  lazy private val commandsAliases = commandParents.flatMap {
+    case (topCmd, xs) =>
+      val named = xs.map(_.aliases)
 
-    val allAliases = named.reduce { (names, acc) =>
-      for {
-        cmdName <- names
-        str <- acc
-      } yield s"$cmdName $str"
-    }.sorted
+      val allAliases = named.reduce { (names, acc) =>
+        for {
+          cmdName <- names
+          str     <- acc
+        } yield s"$cmdName $str"
+      }.sorted
 
-    allAliases.map(_ -> topCmd)
+      allAliases.map(_ -> topCmd)
   }
 
   def execute(src: CommandSource, args: CommandContext): CommandResult = {
@@ -68,7 +69,7 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Co
         CommandResult.success()
       case Some(commandName) =>
         val data = for {
-          cmd <- commandsAliases.get(commandName).toRight(new CommandException(t"${RED}Command not found"))
+          cmd  <- commandsAliases.get(commandName).toRight(new CommandException(t"${RED}Command not found"))
           help <- getCommandHelp(cmd, src).toRight(new CommandException(t"${RED}Couldn't find any help for that command"))
         } yield help
 
@@ -118,7 +119,7 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Co
     @tailrec
     def commandParent(optParent: Option[CommandBase], acc: List[CommandBase]): List[CommandBase] = optParent match {
       case Some(cmdParent) => commandParent(cmdParent.parent, cmdParent :: acc)
-      case None => acc
+      case None            => acc
     }
 
     val parents = commandParent(Some(command), Nil)

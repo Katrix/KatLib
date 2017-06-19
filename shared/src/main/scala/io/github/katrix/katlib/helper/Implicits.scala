@@ -83,16 +83,16 @@ object Implicits {
 
   implicit class PluginContainer(val container: SpongePluginContainer) extends AnyVal {
 
-    def id:          String         = container.getId
-    def name:        String         = container.getName
-    def version:     Option[String] = container.getVersion.toOption
-    def description: Option[String] = container.getDescription.toOption
-    def url:         Option[String] = container.getUrl.toOption
-    def authors:     Seq[String]    = container.getAuthors.asScala
-    def getAsset(name: String): Option[Asset] = container.getAsset(name).toOption
-    def sources:  Option[Path] = container.getSource.toOption
-    def instance: Option[_]    = container.getInstance().toOption
-    def logger:   Logger       = container.getLogger
+    def id:                     String         = container.getId
+    def name:                   String         = container.getName
+    def version:                Option[String] = container.getVersion.toOption
+    def description:            Option[String] = container.getDescription.toOption
+    def url:                    Option[String] = container.getUrl.toOption
+    def authors:                Seq[String]    = container.getAuthors.asScala
+    def getAsset(name: String): Option[Asset]  = container.getAsset(name).toOption
+    def sources:                Option[Path]   = container.getSource.toOption
+    def instance:               Option[_]      = container.getInstance().toOption
+    def logger:                 Logger         = container.getLogger
   }
 
   implicit def typeToken[A]: TypeToken[A] = macro MacroImpl.typeToken[A]
@@ -101,7 +101,7 @@ object Implicits {
 
     //Pretty syntax is bugged right now https://issues.scala-lang.org/browse/SI-8969
     def value_=[A: TypeToken](value: A): Unit = node.setValue(implicitly[TypeToken[A]], value)
-    def value[A:   TypeToken]: A = node.getValue(implicitly[TypeToken[A]])
+    def value[A: TypeToken]:             A    = node.getValue(implicitly[TypeToken[A]])
 
     def list[A: TypeToken]: Seq[A] = Seq(node.getList(implicitly[TypeToken[A]]).asScala: _*)
   }
@@ -139,7 +139,7 @@ object Implicits {
         else {
           val argObj = argsLeft.head match {
             case string: String => TextTemplate.arg(string)
-            case any @ _ => any.asInstanceOf[AnyRef]
+            case any @ _        => any.asInstanceOf[AnyRef]
           }
           inner(partsLeft.tail, argsLeft.tail, (res :+ argObj) :+ partsLeft.head)
         }
@@ -174,8 +174,8 @@ object Implicits {
 
   implicit class RichServiceManager(val serviceManager: ServiceManager) extends AnyVal {
 
-    def provide[A:          ClassTag]: Option[A] = serviceManager.provide(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
-    def provideTry[A:       ClassTag]: Try[A]    = Try(serviceManager.provideUnchecked(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]))
+    def provide[A: ClassTag]:          Option[A] = serviceManager.provide(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+    def provideTry[A: ClassTag]:       Try[A]    = Try(serviceManager.provideUnchecked(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]))
     def provideUnchecked[A: ClassTag]: A         = serviceManager.provideUnchecked(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
 
     def isRegistered[A: ClassTag]: Boolean = serviceManager.isRegistered(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])

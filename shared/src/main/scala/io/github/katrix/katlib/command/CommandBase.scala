@@ -47,7 +47,7 @@ abstract class CommandBase(val parent: Option[CommandBase])(implicit plugin: Kat
   def playerNotFoundError: CommandException = CommandBase.playerNotFoundError
 
   def notFoundError(notFound: String, lookFor: String): CommandException = CommandBase.notFoundError(notFound, lookFor)
-  def invalidParameterError: CommandException = CommandBase.invalidParameterError
+  def invalidParameterError:                            CommandException = CommandBase.invalidParameterError
 }
 
 object CommandBase {

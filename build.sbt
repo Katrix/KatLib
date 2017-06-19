@@ -45,7 +45,7 @@ lazy val commonSettings = Seq(
   libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.2" exclude ("org.typelevel", "macro-compat_2.12") //Don't think macro-compat needs to be in the jar
 )
 
-lazy val usedSettings = if(isJitpack) commonSettings else commonSettings ++ noJitpackSettings
+lazy val usedSettings = if (isJitpack) commonSettings else commonSettings ++ noJitpackSettings
 
 lazy val katLibShared = (project in file("shared"))
   .enablePlugins(SpongePlugin)
@@ -68,34 +68,19 @@ lazy val katLibShared = (project in file("shared"))
 lazy val katLibV410 = (project in file("4.1.0"))
   .enablePlugins(SpongePlugin)
   .dependsOn(katLibShared)
-  .settings(
-    usedSettings,
-    spongeApiVersion := "4.1.0"
-  )
+  .settings(usedSettings, spongeApiVersion := "4.1.0")
 
 lazy val katLibV500 = (project in file("5.0.0"))
   .enablePlugins(SpongePlugin)
   .dependsOn(katLibShared)
-  .settings(
-    usedSettings,
-    spongeApiVersion := "5.0.0"
-  )
+  .settings(usedSettings, spongeApiVersion := "5.0.0")
 
 lazy val katLibV600 = (project in file("6.0.0"))
   .enablePlugins(SpongePlugin)
   .dependsOn(katLibShared)
-  .settings(
-    usedSettings,
-    spongeApiVersion := "6.0.0"
-  )
+  .settings(usedSettings, spongeApiVersion := "6.0.0")
 
 lazy val katLibRoot = (project in file("."))
-  .settings(
-    publishArtifact := false,
-    assembleArtifact := false,
-    spongeMetaCreate := false,
-    publish := {},
-    publishLocal := {}
-  )
+  .settings(publishArtifact := false, assembleArtifact := false, spongeMetaCreate := false, publish := {}, publishLocal := {})
   .disablePlugins(AssemblyPlugin)
   .aggregate(katLibShared, katLibV410, katLibV500, katLibV600)
