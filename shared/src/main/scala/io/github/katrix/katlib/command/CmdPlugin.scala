@@ -28,28 +28,31 @@ import org.spongepowered.api.text.format.TextColors
 
 import io.github.katrix.katlib.KatPlugin
 import io.github.katrix.katlib.helper.Implicits._
+import io.github.katrix.katlib.i18n.{KLResource, Localized}
 
 final class CmdPlugin(implicit plugin: KatPlugin) extends CommandBase(None) {
 
   val cmdHelp       = new CmdHelp(this)
   var extraChildren = Seq.empty[CommandBase]
 
-  override def execute(src: CommandSource, args: CommandContext): CommandResult = {
+  override def execute(src: CommandSource, args: CommandContext): CommandResult = Localized(src) { implicit locale =>
     val container = plugin.container
     val text      = Text.builder(container.name).color(TextColors.YELLOW)
     container.version.foreach(version => text.append(t" v.$version"))
     container.description.foreach(description => text.append(Text.NEW_LINE).append(t"$description"))
     container.url.foreach(url => text.append(Text.NEW_LINE).append(t"$url"))
-    if (container.authors.nonEmpty) text.append(t"Created by: ${container.authors.mkString(", ")}")
+    if (container.authors.nonEmpty) text.append(KLResource.getText("cmd.plugin.createdBy", "creators" -> plugin.container.authors.mkString(", ")))
 
     src.sendMessage(text.build())
     CommandResult.success()
   }
 
+  override def description(src: CommandSource): Option[Text] = Localized(src)(implicit locale => Some(KLResource.getText("cmd.plugin.description")))
+
   override def commandSpec: CommandSpec =
     CommandSpec
       .builder()
-      .description(t"Shows some information about ${plugin.container.name}")
+      .description(KLResource.getText("cmd.plugin.description", "plugin" -> plugin.container.name)(Localized.Default))
       .executor(this)
       .permission(s"${plugin.container.id}.info")
       .children(this)

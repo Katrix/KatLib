@@ -37,6 +37,7 @@ import org.spongepowered.api.text.format.{TextColors, TextStyles}
 import io.github.katrix.katlib.KatPlugin
 import io.github.katrix.katlib.helper.Implicits._
 import io.github.katrix.katlib.helper.LogHelper
+import io.github.katrix.katlib.i18n.{KLResource, Localized}
 import io.github.katrix.katlib.lib.LibCommonTCommandKey
 
 final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends CommandBase(Some(cmdPlugin)) {
@@ -57,11 +58,11 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Co
       allAliases.map(_ -> topCmd)
   }
 
-  def execute(src: CommandSource, args: CommandContext): CommandResult = {
+  def execute(src: CommandSource, args: CommandContext): CommandResult = Localized(src) { implicit locale =>
     args.one(LibCommonTCommandKey.Command) match {
       case None =>
         val pages = Sponge.getGame.getServiceManager.provideUnchecked(classOf[PaginationService]).builder
-        pages.title(t"$RED${plugin.container.name} Help")
+        pages.title(t"$RED${KLResource.get("cmd.help.pageTitle", "plugin" -> plugin.container.name)}")
 
         val text = commandParents.keys.toSeq.flatMap(commandBase => getCommandHelp(commandBase, src)).sorted
         pages.contents(text.asJavaCollection)
@@ -69,8 +70,8 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Co
         CommandResult.success()
       case Some(commandName) =>
         val data = for {
-          cmd  <- commandsAliases.get(commandName).toRight(new CommandException(t"${RED}Command not found"))
-          help <- getCommandHelp(cmd, src).toRight(new CommandException(t"${RED}Couldn't find any help for that command"))
+          cmd  <- commandsAliases.get(commandName).toRight(new CommandException(t"$RED${KLResource.get("cmd.help.cmdNotFound")}"))
+          help <- getCommandHelp(cmd, src).toRight(new CommandException(t"$RED${KLResource.get("cmd.help.noHelpFound")}"))
         } yield help
 
         data match {
@@ -82,10 +83,15 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Co
     }
   }
 
+  override def description(src: CommandSource): Option[Text] =
+    Localized(src)(implicit locale => Some(KLResource.getText("cmd.help.description")))
+  override def extendedDescription(src: CommandSource): Option[Text] =
+    Localized(src)(implicit locale => Some(KLResource.getText("cmd.help.extendedDescription")))
+
   def commandSpec: CommandSpec =
     CommandSpec.builder
-      .description(t"This command right here.")
-      .extendedDescription(t"Use /${plugin.container.id} help <command> <subcommand> \nto get help for a specific command")
+      .description(KLResource.getText("cmd.help.description")(Localized.Default))
+      .extendedDescription(KLResource.getText("cmd.help.extendedDescription", "plugin" -> plugin.container.id)(Localized.Default))
       .permission(s"${plugin.container.id}.help")
       .arguments(GenericArguments.optional(GenericArguments.remainingJoinedStrings(LibCommonTCommandKey.Command)))
       .executor(this)
@@ -105,12 +111,10 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Co
 		*/
   private def getCommandHelp(commandBase: CommandBase, src: CommandSource): Option[Text] = {
     stringCommand(commandBase).map { strCommand =>
-      val commandSpec = commandBase.commandSpec
-
       val commandText = Text.builder().append(Text.of(TextColors.GREEN, TextStyles.UNDERLINE, strCommand))
-      commandText.onHover(TextActions.showText(commandSpec.getHelp(src).orElse(commandSpec.getUsage(src))))
+      commandText.onHover(TextActions.showText(commandBase.help(src)))
       commandText.onClick(TextActions.suggestCommand(strCommand))
-      Text.of(commandText, " ", commandSpec.getShortDescription(src).orElse(commandSpec.getUsage(src)))
+      Text.of(commandText, " ", commandBase.description(src).getOrElse(commandBase.usage(src)))
     }
   }
 

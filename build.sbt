@@ -42,7 +42,8 @@ lazy val commonSettings = Seq(
     authors = Seq("Katrix"),
     dependencies = Set(DependencyInfo("spongeapi", Some(removeSnapshot(spongeApiVersion.value))))
   ),
-  libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.2" exclude ("org.typelevel", "macro-compat_2.12") //Don't think macro-compat needs to be in the jar
+  libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.2" exclude ("org.typelevel", "macro-compat_2.12"), //Don't think macro-compat needs to be in the jar
+  libraryDependencies += "org.jetbrains" % "annotations" % "15.0" % Provided
 )
 
 lazy val usedSettings = if (isJitpack) commonSettings else commonSettings ++ noJitpackSettings
