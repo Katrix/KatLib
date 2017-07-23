@@ -28,7 +28,7 @@ lazy val commonSettings = Seq(
   name := s"KatLib-${removeSnapshot(spongeApiVersion.value)}",
   organization := "io.github.katrix",
   version := "2.2.0",
-  scalaVersion := "2.12.1",
+  scalaVersion := "2.12.2",
   assemblyShadeRules in assembly := Seq(
     ShadeRule.rename("scala.**"     -> "io.github.katrix.katlib.shade.scala.@1").inAll,
     ShadeRule.rename("shapeless.**" -> "io.github.katrix.katlib.shade.shapeless.@1").inAll
@@ -56,13 +56,12 @@ lazy val katLibShared = (project in file("shared"))
     name := "KatLib-Shared",
     //Default version, needs to build correctly against all supported versions
     spongeApiVersion := "4.1.0",
-    libraryDependencies += "org.scalameta" %% "scalameta" % "1.6.0" % Provided,
+    libraryDependencies += "org.scalameta" %% "scalameta" % "1.8.0" % Provided,
     resolvers += Resolver.sonatypeRepo("releases"),
     resolvers += Resolver.bintrayIvyRepo("scalameta", "maven"),
-    addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M7" cross CrossVersion.full),
+    addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M9" cross CrossVersion.full),
     scalacOptions += "-Xplugin-require:macroparadise",
     scalacOptions in (Compile, console) := Seq(), //macroparadise plugin doesn't work in repl yet.
-    sources in (Compile, doc) := Nil, //macroparadise doesn't work with scaladoc yet.
     libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
   )
 
