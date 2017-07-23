@@ -74,7 +74,6 @@ object TypeSerializerImpl {
     implicit def toConfiguration(node: ConfigNode): ConfigurationNode = node.asInstanceOf[ConfigurationNodeWrapper].node
 
     override def write(obj: Map[A, B], node: ConfigNode): ConfigNode = {
-      val serializer = implicitly[ConfigSerializer[B]]
       val toWrite: util.Map[C, ConfigurationNode] = obj.map {
         case (k, v) =>
           val value: ConfigurationNode = SimpleConfigurationNode.root().write(v)
