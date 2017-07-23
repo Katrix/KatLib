@@ -20,8 +20,8 @@ trait Resource {
 
   def getText(key: String)(implicit locale: Locale): Text = Text.of(get(key))
 
-  def getText(key: String, params: Map[String, _])(implicit locale: Locale): Text = formatText(get(key), params)
-  def getText(key: String, params: (String, _)*)(implicit locale: Locale):   Text = getText(key, params.toMap)
+  def getText(key: String, params: Map[String, AnyRef])(implicit locale: Locale): Text = formatText(get(key), params)
+  def getText(key: String, params: (String, AnyRef)*)(implicit locale: Locale):   Text = getText(key, params.toMap)
 
   private def format(str: String, params: Map[String, String]): String =
     new StrSubstitutor(params.asJava).replace(str)
@@ -37,7 +37,7 @@ trait Resource {
         else Seq(str1, str2)
       }
 
-      TextTemplate.of("${", "}", objs: _*).apply(params.asJava).build()
+      TextTemplate.of("${", "}", objs.toArray).apply(params.asJava).build()
     }
   }
 }

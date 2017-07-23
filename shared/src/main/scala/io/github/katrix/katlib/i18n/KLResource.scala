@@ -18,8 +18,8 @@ object KLResource extends Resource {
 
   override def getText(@PropertyKey(resourceBundle = ResourceLocation) key: String)(implicit locale: Locale): Text = super.getText(key)
 
-  override def getText(@PropertyKey(resourceBundle = ResourceLocation) key: String, params: Map[String, String])(implicit locale: Locale): Text =
+  override def getText(@PropertyKey(resourceBundle = ResourceLocation) key: String, params: Map[String, AnyRef])(implicit locale: Locale): Text =
     super.getText(key, params)
-  override def getText(@PropertyKey(resourceBundle = ResourceLocation) key: String, params: (String, String)*)(implicit locale: Locale): Text =
+  override def getText(@PropertyKey(resourceBundle = ResourceLocation) key: String, params: (String, AnyRef)*)(implicit locale: Locale): Text =
     super.getText(key, params: _*)
 }
