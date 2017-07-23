@@ -52,7 +52,7 @@ class cfg(name: String) extends StaticAnnotation {
 
           def createLoadSaveStat(comment: Option[Term.Arg], valName: Pat.Var.Term, tpe: Type, body: Term): (Some[Stat], Seq[Stat]) = {
             val name     = valName.name
-            val nodeName = Lit(getRefParents(name).syntax.replace("`", ""))
+            val nodeName = Lit.String(getRefParents(name).syntax.replace("`", ""))
 
             val dataPath    = getSelectRoot(name, Term.Name("data"))
             val defaultPath = getSelectRoot(name, Term.Name("DefaultConfig"))
