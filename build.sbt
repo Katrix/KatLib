@@ -62,6 +62,7 @@ lazy val katLibShared = (project in file("shared"))
     addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M9" cross CrossVersion.full),
     scalacOptions += "-Xplugin-require:macroparadise",
     scalacOptions in (Compile, console) := Seq(), //macroparadise plugin doesn't work in repl yet.
+    sources in (Compile, doc) := Nil, //macroparadise doesn't work with scaladoc yet.
     libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
   )
 
