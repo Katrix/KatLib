@@ -20,6 +20,8 @@
  */
 package io.github.katrix.katlib.command
 
+import java.util.Locale
+
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -40,7 +42,7 @@ import io.github.katrix.katlib.helper.LogHelper
 import io.github.katrix.katlib.i18n.{KLResource, Localized}
 import io.github.katrix.katlib.lib.LibCommonTCommandKey
 
-final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends CommandBase(Some(cmdPlugin)) {
+final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends LocalizedCommand(Some(cmdPlugin)) {
 
   private val commandParents = new mutable.HashMap[CommandBase, Seq[CommandBase]]
 
@@ -83,15 +85,13 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Co
     }
   }
 
-  override def description(src: CommandSource): Option[Text] =
-    Localized(src)(implicit locale => Some(KLResource.getText("cmd.help.description")))
-  override def extendedDescription(src: CommandSource): Option[Text] =
-    Localized(src)(implicit locale => Some(KLResource.getText("cmd.help.extendedDescription")))
+  override def localizedDescription(implicit locale: Locale): Option[Text] = Some(KLResource.getText("cmd.help.description"))
+  override def localizedExtendedDescription(implicit locale: Locale): Option[Text] = Some(KLResource.getText("cmd.help.extendedDescription"))
 
   def commandSpec: CommandSpec =
     CommandSpec.builder
-      .description(KLResource.getText("cmd.help.description")(Localized.Default))
-      .extendedDescription(KLResource.getText("cmd.help.extendedDescription", "plugin" -> plugin.container.id)(Localized.Default))
+      .description(this)
+      .extendedDescription(this)
       .permission(s"${plugin.container.id}.help")
       .arguments(GenericArguments.optional(GenericArguments.remainingJoinedStrings(LibCommonTCommandKey.Command)))
       .executor(this)

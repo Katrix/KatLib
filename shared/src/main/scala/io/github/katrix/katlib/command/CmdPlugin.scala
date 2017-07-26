@@ -20,6 +20,8 @@
  */
 package io.github.katrix.katlib.command
 
+import java.util.Locale
+
 import org.spongepowered.api.command.args.CommandContext
 import org.spongepowered.api.command.spec.CommandSpec
 import org.spongepowered.api.command.{CommandResult, CommandSource}
@@ -30,7 +32,7 @@ import io.github.katrix.katlib.KatPlugin
 import io.github.katrix.katlib.helper.Implicits._
 import io.github.katrix.katlib.i18n.{KLResource, Localized}
 
-final class CmdPlugin(implicit plugin: KatPlugin) extends CommandBase(None) {
+final class CmdPlugin(implicit plugin: KatPlugin) extends LocalizedCommand(None) {
 
   val cmdHelp       = new CmdHelp(this)
   var extraChildren = Seq.empty[CommandBase]
@@ -47,13 +49,13 @@ final class CmdPlugin(implicit plugin: KatPlugin) extends CommandBase(None) {
     CommandResult.success()
   }
 
-  override def description(src: CommandSource): Option[Text] = Localized(src)(implicit locale => Some(KLResource.getText("cmd.plugin.description")))
+  override def localizedDescription(implicit locale: Locale): Option[Text] = Some(KLResource.getText("cmd.plugin.description"))
 
   override def commandSpec: CommandSpec =
     CommandSpec
       .builder()
-      .description(KLResource.getText("cmd.plugin.description", "plugin" -> plugin.container.name)(Localized.Default))
       .executor(this)
+      .description(this)
       .permission(s"${plugin.container.id}.info")
       .children(this)
       .build()
