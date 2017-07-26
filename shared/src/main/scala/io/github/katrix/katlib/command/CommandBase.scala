@@ -40,7 +40,7 @@ abstract class CommandBase(val parent: Option[CommandBase])(implicit plugin: Kat
   def children: Seq[CommandBase] = Nil
 
   def description(src: CommandSource): Option[Text] = commandSpec.getShortDescription(src).toOption
-  def extendedDescription(src: CommandSource): Option[Text] = Option(CommandBase.extendedDescriptionField.get(src).asInstanceOf[Text])
+  def extendedDescription(src: CommandSource): Option[Text] = Option(CommandBase.extendedDescriptionField.get(commandSpec).asInstanceOf[Text])
   def usage(src: CommandSource): Text = commandSpec.getUsage(src)
 
   def help(src: CommandSource): Text = {
