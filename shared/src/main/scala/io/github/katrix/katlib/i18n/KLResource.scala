@@ -5,7 +5,7 @@ import org.jetbrains.annotations.PropertyKey
 import org.spongepowered.api.text.Text
 
 object KLResource extends Resource {
-  final val ResourceLocation = "katlib.resources"
+  final val ResourceLocation = "assets.katlib.lang"
 
   override def getBundle(implicit locale: Locale): ResourceBundle = ResourceBundle.getBundle(ResourceLocation, locale)
 
