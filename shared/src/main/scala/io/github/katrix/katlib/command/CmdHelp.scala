@@ -26,11 +26,10 @@ import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-import org.spongepowered.api.Sponge
 import org.spongepowered.api.command.args.{CommandContext, GenericArguments}
 import org.spongepowered.api.command.spec.CommandSpec
 import org.spongepowered.api.command.{CommandException, CommandResult, CommandSource}
-import org.spongepowered.api.service.pagination.PaginationService
+import org.spongepowered.api.service.pagination.PaginationList
 import org.spongepowered.api.text.Text
 import org.spongepowered.api.text.action.TextActions
 import org.spongepowered.api.text.format.TextColors._
@@ -63,7 +62,7 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Lo
   def execute(src: CommandSource, args: CommandContext): CommandResult = Localized(src) { implicit locale =>
     args.one(LibCommonTCommandKey.Command) match {
       case None =>
-        val pages = Sponge.getGame.getServiceManager.provideUnchecked(classOf[PaginationService]).builder
+        val pages = PaginationList.builder()
         pages.title(t"$RED${KLResource.get("cmd.help.pageTitle", "plugin" -> plugin.container.name)}")
 
         val text = commandParents.keys.toSeq.flatMap(commandBase => getCommandHelp(commandBase, src)).sorted
