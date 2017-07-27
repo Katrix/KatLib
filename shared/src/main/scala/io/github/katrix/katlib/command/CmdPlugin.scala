@@ -49,7 +49,7 @@ final class CmdPlugin(implicit plugin: KatPlugin) extends LocalizedCommand(None)
     CommandResult.success()
   }
 
-  override def localizedDescription(implicit locale: Locale): Option[Text] = Some(KLResource.getText("cmd.plugin.description"))
+  override def localizedDescription(implicit locale: Locale): Option[Text] = Some(KLResource.getText("cmd.plugin.description", "plugin" -> plugin.container.name))
 
   override def commandSpec: CommandSpec =
     CommandSpec
