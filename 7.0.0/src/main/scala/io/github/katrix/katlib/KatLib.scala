@@ -39,9 +39,9 @@ import io.github.katrix.katlib.persistant.{CommentedConfigValue, Config, KatLibT
 
 object KatLib {
 
-  final val CompiledAgainst = "6.0.0"
+  final val CompiledAgainst = "7.0.0"
   final val Version         = s"$CompiledAgainst-2.2.0"
-  final val ConstantVersion = "6.0.0-2.2.0"
+  final val ConstantVersion = "7.0.0-2.2.0"
   assert(Version == ConstantVersion)
 
   private var _plugin: KatLib = _

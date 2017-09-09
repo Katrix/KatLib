@@ -23,6 +23,7 @@ package io.github.katrix.katlib
 import java.nio.file.Path
 
 import org.slf4j.Logger
+import org.spongepowered.api.Platform.Component
 import org.spongepowered.api.Sponge
 import org.spongepowered.api.config.ConfigDir
 import org.spongepowered.api.event.Listener
@@ -54,12 +55,7 @@ object KatLib {
   authors = Array("Katrix")
 )
 class KatLib @Inject()(logger: Logger, @ConfigDir(sharedRoot = true) configDir: Path, container: PluginContainer)
-    extends ImplKatPlugin(logger, configDir, container) {
-
-  //Not actually used so far
-  override def config: Config = new Config {
-    override def seq: Seq[CommentedConfigValue[_]] = Seq()
-  }
+    extends ImplKatPlugin(logger, configDir, container) with KatLibBase {
 
   @Listener
   def gameConstruct(event: GameConstructionEvent): Unit = {
@@ -69,15 +65,7 @@ class KatLib @Inject()(logger: Logger, @ConfigDir(sharedRoot = true) configDir: 
 
   @Listener
   def gameInit(event: GameInitializationEvent): Unit = {
-    Sponge.getPlatform.getApi.getVersion.toOption match {
-      case Some(version) if version != KatLib.CompiledAgainst =>
-        LogHelper.warn(s"KatLib is not compiled against $version. KatLib (and plugins depending on it) might break")(
-          this
-        )
-      case None =>
-        LogHelper.warn("Could not find API version for Sponge. KatLib (and plugins depending on it) might break")(this)
-      case Some(_) =>
-    }
+    checkSpongeVersion(Sponge.getPlatform.getApi.getVersion.toOption, KatLib.CompiledAgainst)
     Sponge.getCommandManager.register(this, pluginCmd.commandSpec, pluginCmd.aliases: _*)
   }
 }

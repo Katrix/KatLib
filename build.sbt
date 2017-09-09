@@ -89,6 +89,11 @@ lazy val katLibV600 = (project in file("6.0.0"))
   .dependsOn(katLibShared)
   .settings(usedSettings, spongeApiVersion := "6.0.0")
 
+lazy val katLibV700 = (project in file("7.0.0"))
+  .enablePlugins(SpongePlugin)
+  .dependsOn(katLibShared)
+  .settings(usedSettings, spongeApiVersion := "7.0.0-SNAPSHOT")
+
 lazy val katLibRoot = (project in file("."))
   .settings(
     publishArtifact := false,
@@ -98,4 +103,4 @@ lazy val katLibRoot = (project in file("."))
     publishLocal := {}
   )
   .disablePlugins(AssemblyPlugin)
-  .aggregate(katLibShared, katLibV410, katLibV500, katLibV600)
+  .aggregate(katLibShared, katLibV410, katLibV500, katLibV600, katLibV700)
