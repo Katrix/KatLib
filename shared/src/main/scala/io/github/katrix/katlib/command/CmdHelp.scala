@@ -71,8 +71,12 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Lo
         CommandResult.success()
       case Some(commandName) =>
         val data = for {
-          cmd  <- commandsAliases.get(commandName).toRight(new CommandException(t"$RED${KLResource.get("cmd.help.cmdNotFound")}"))
-          help <- getCommandHelp(cmd, src).toRight(new CommandException(t"$RED${KLResource.get("cmd.help.noHelpFound")}"))
+          cmd <- commandsAliases
+            .get(commandName)
+            .toRight(new CommandException(t"$RED${KLResource.get("cmd.help.cmdNotFound")}"))
+          help <- getCommandHelp(cmd, src).toRight(
+            new CommandException(t"$RED${KLResource.get("cmd.help.noHelpFound")}")
+          )
         } yield help
 
         data match {
@@ -84,8 +88,10 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Lo
     }
   }
 
-  override def localizedDescription(implicit locale: Locale): Option[Text] = Some(KLResource.getText("cmd.help.description"))
-  override def localizedExtendedDescription(implicit locale: Locale): Option[Text] = Some(KLResource.getText("cmd.help.extendedDescription"))
+  override def localizedDescription(implicit locale: Locale): Option[Text] =
+    Some(KLResource.getText("cmd.help.description"))
+  override def localizedExtendedDescription(implicit locale: Locale): Option[Text] =
+    Some(KLResource.getText("cmd.help.extendedDescription"))
 
   def commandSpec: CommandSpec =
     CommandSpec.builder

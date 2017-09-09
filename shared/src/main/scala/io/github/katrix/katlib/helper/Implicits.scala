@@ -100,10 +100,10 @@ object Implicits {
   implicit class RichConfigurationNode(val node: ConfigurationNode) extends AnyVal {
 
     //Pretty syntax is bugged right now https://issues.scala-lang.org/browse/SI-8969
-    def value_=[A: TypeToken](value: A): Unit = node.setValue(implicitly[TypeToken[A]], value)
-    def value[A: TypeToken]:             A    = node.getValue(implicitly[TypeToken[A]])
+    def value_=[A](value: A)(implicit ev: TypeToken[A]): Unit = node.setValue(ev, value)
+    def value[A](implicit ev: TypeToken[A]):             A    = node.getValue(ev)
 
-    def list[A: TypeToken]: Seq[A] = Seq(node.getList(implicitly[TypeToken[A]]).asScala: _*)
+    def list[A](implicit ev: TypeToken[A]): Seq[A] = Seq(node.getList(ev).asScala: _*)
   }
 
   implicit class TextStringContext(private val sc: StringContext) extends AnyVal {
@@ -157,7 +157,9 @@ object Implicits {
       dataManager.registerContentUpdater(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], updater)
 
     def getWrappedContentUpdater[A <: DataSerializable: ClassTag](from: Int, to: Int): Option[DataContentUpdater] =
-      dataManager.getWrappedContentUpdater(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], from, to).toOption
+      dataManager
+        .getWrappedContentUpdater(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], from, to)
+        .toOption
 
     def getBuilder[A <: DataSerializable: ClassTag]: Option[DataBuilder[A]] =
       dataManager.getBuilder(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
@@ -174,11 +176,15 @@ object Implicits {
 
   implicit class RichServiceManager(val serviceManager: ServiceManager) extends AnyVal {
 
-    def provide[A: ClassTag]:          Option[A] = serviceManager.provide(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
-    def provideTry[A: ClassTag]:       Try[A]    = Try(serviceManager.provideUnchecked(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]))
-    def provideUnchecked[A: ClassTag]: A         = serviceManager.provideUnchecked(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
+    def provide[A: ClassTag]: Option[A] =
+      serviceManager.provide(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
+    def provideTry[A: ClassTag]: Try[A] =
+      Try(serviceManager.provideUnchecked(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]))
+    def provideUnchecked[A: ClassTag]: A =
+      serviceManager.provideUnchecked(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
 
-    def isRegistered[A: ClassTag]: Boolean = serviceManager.isRegistered(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
+    def isRegistered[A: ClassTag]: Boolean =
+      serviceManager.isRegistered(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
 
     def getRegistration[A: ClassTag]: Option[ProviderRegistration[A]] =
       serviceManager.getRegistration(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption

@@ -27,9 +27,9 @@ abstract class Config {
   /**
 		* Gets a config value with the same path as it is saved with
 		*/
-  def byPath[A: TypeToken](path: String*): Option[CommentedConfigValue[A]] =
+  def byPath[A](path: String*)(implicit ev: TypeToken[A]) : Option[CommentedConfigValue[A]] =
     seq
-      .find(c => c.typeToken == implicitly[TypeToken[A]] && c.path == path)
+      .find(c => c.typeToken == ev && c.path == path)
       .asInstanceOf[Option[CommentedConfigValue[A]]]
 
   /**

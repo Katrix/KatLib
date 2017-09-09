@@ -33,7 +33,8 @@ object TypeSerializerImpl {
       }
     }
 
-    def readValue[A](typeToken: TypeToken[A]): Try[A] = Try(Option(node.getValue(typeToken)).getOrElse(throw new ObjectMappingException))
+    def readValue[A](typeToken: TypeToken[A]): Try[A] =
+      Try(Option(node.getValue(typeToken)).getOrElse(throw new ObjectMappingException))
 
     override def readList[A: ConfigSerializer]: Try[Seq[A]] =
       read[Map[Int, A]].map(_.toSeq.sortBy(_._1).map(_._2))
@@ -69,34 +70,38 @@ object TypeSerializerImpl {
   def mapSerializer[A, B: ConfigSerializer](keyValidate: PartialFunction[AnyRef, A]): ConfigSerializer[Map[A, B]] =
     mapSerializer[A, B, A](keyValidate)(identity)
 
-  def mapSerializer[A, B: ConfigSerializer, C](keyValidate: PartialFunction[AnyRef, A])(keyFun: A => C) = new ConfigSerializer[Map[A, B]] {
-    import scala.language.implicitConversions
-    implicit def toConfiguration(node: ConfigNode): ConfigurationNode = node.asInstanceOf[ConfigurationNodeWrapper].node
+  def mapSerializer[A, B: ConfigSerializer, C](keyValidate: PartialFunction[AnyRef, A])(keyFun: A => C) =
+    new ConfigSerializer[Map[A, B]] {
+      import scala.language.implicitConversions
+      implicit def toConfiguration(node: ConfigNode): ConfigurationNode =
+        node.asInstanceOf[ConfigurationNodeWrapper].node
 
-    override def write(obj: Map[A, B], node: ConfigNode): ConfigNode = {
-      val toWrite: util.Map[C, ConfigurationNode] = obj.map {
-        case (k, v) =>
-          val value: ConfigurationNode = SimpleConfigurationNode.root().write(v)
-          keyFun(k) -> value
-      }.asJava
-      node.setValue(toWrite)
+      override def write(obj: Map[A, B], node: ConfigNode): ConfigNode = {
+        val toWrite: util.Map[C, ConfigurationNode] = obj.map {
+          case (k, v) =>
+            val value: ConfigurationNode = SimpleConfigurationNode.root().write(v)
+            keyFun(k) -> value
+        }.asJava
+        node.setValue(toWrite)
+      }
+
+      override def read(node: ConfigNode): Try[Map[A, B]] = {
+        val configNode: ConfigurationNode = node
+        if (configNode.hasMapChildren) {
+          val tryMap = configNode.getChildrenMap.asScala.map { case (k, v) => keyValidate.lift(k) -> v.read[B] }
+
+          //The TypeSerializer for maps are lenient with errors so we are too
+          val successes = tryMap.collect {
+            case (Some(k), Success(v)) => k -> v
+          }
+          Success(Map(successes.toSeq: _*))
+        } else Success(Map())
+      }
     }
 
-    override def read(node: ConfigNode): Try[Map[A, B]] = {
-      val configNode: ConfigurationNode = node
-      if (configNode.hasMapChildren) {
-        val tryMap = configNode.getChildrenMap.asScala.map { case (k, v) => keyValidate.lift(k) -> v.read[B] }
-
-        //The TypeSerializer for maps are lenient with errors so we are too
-        val successes = tryMap.collect {
-          case (Some(k), Success(v)) => k -> v
-        }
-        Success(Map(successes.toSeq: _*))
-      } else Success(Map())
-    }
+  implicit def stringMapSerializer[A: ConfigSerializer]: ConfigSerializer[Map[String, A]] = mapSerializer[String, A] {
+    case str: String => str
   }
-
-  implicit def stringMapSerializer[A: ConfigSerializer]: ConfigSerializer[Map[String, A]] = mapSerializer[String, A] { case str: String => str }
   implicit def byteMapSerializer[A: ConfigSerializer]: ConfigSerializer[Map[Byte, A]] =
     mapSerializer[Byte, A, JByte] {
       case byte: JByte                              => byte.byteValue()
@@ -128,13 +133,15 @@ object TypeSerializerImpl {
       case str: String if NumberUtils.isNumber(str) => str.toDouble
     }(Double.box)
 
-  def fromTypeSerializer[A](typeSerializer: TypeSerializer[A], clazz: Class[A]): ConfigSerializer[A] = new ConfigSerializer[A] {
-    private val typeToken = TypeToken.of(clazz)
-    override def shouldBypass: Option[Class[A]] = Some(clazz)
-    override def write(obj: A, node: ConfigNode): ConfigNode = {
-      typeSerializer.serialize(typeToken, obj, node.asInstanceOf[ConfigurationNodeWrapper].node)
-      node
+  def fromTypeSerializer[A](typeSerializer: TypeSerializer[A], clazz: Class[A]): ConfigSerializer[A] =
+    new ConfigSerializer[A] {
+      private val typeToken = TypeToken.of(clazz)
+      override def shouldBypass: Option[Class[A]] = Some(clazz)
+      override def write(obj: A, node: ConfigNode): ConfigNode = {
+        typeSerializer.serialize(typeToken, obj, node.asInstanceOf[ConfigurationNodeWrapper].node)
+        node
+      }
+      override def read(node: ConfigNode): Try[A] =
+        Try(typeSerializer.deserialize(typeToken, node.asInstanceOf[ConfigurationNodeWrapper].node))
     }
-    override def read(node: ConfigNode): Try[A] = Try(typeSerializer.deserialize(typeToken, node.asInstanceOf[ConfigurationNodeWrapper].node))
-  }
 }

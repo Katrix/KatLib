@@ -27,14 +27,15 @@ trait Resource {
     new StrSubstitutor(params.asJava).replace(str)
 
   private def formatText(str: String, params: Map[String, _]): Text = {
-    if(params.forall(t => t._2.isInstanceOf[String])) Text.of(format(str, params.asInstanceOf[Map[String, String]]))
+    if (params.forall(t => t._2.isInstanceOf[String])) Text.of(format(str, params.asInstanceOf[Map[String, String]]))
     else {
-      val args = findArgs.findAllIn(str).toSeq.map(s => TextTemplate.arg(s.substring(2, s.length - 1)))
+      val args    = findArgs.findAllIn(str).toSeq.map(s => TextTemplate.arg(s.substring(2, s.length - 1)))
       val nonArgs = findArgs.split(str).toSeq.padTo(args.length, "")
 
-      val objs = nonArgs.zip(args).flatMap { case (str1, str2) =>
-        if(str1.isEmpty) Seq(str2)
-        else Seq(str1, str2)
+      val objs = nonArgs.zip(args).flatMap {
+        case (str1, str2) =>
+          if (str1.isEmpty) Seq(str2)
+          else Seq(str1, str2)
       }
 
       TextTemplate.of("${", "}", objs.toArray).apply(params.asJava).build()

@@ -43,13 +43,15 @@ final class CmdPlugin(implicit plugin: KatPlugin) extends LocalizedCommand(None)
     container.version.foreach(version => text.append(t" v.$version"))
     container.description.foreach(description => text.append(Text.NEW_LINE).append(t"$description"))
     container.url.foreach(url => text.append(Text.NEW_LINE).append(t"$url"))
-    if (container.authors.nonEmpty) text.append(KLResource.getText("cmd.plugin.createdBy", "creators" -> plugin.container.authors.mkString(", ")))
+    if (container.authors.nonEmpty)
+      text.append(KLResource.getText("cmd.plugin.createdBy", "creators" -> plugin.container.authors.mkString(", ")))
 
     src.sendMessage(text.build())
     CommandResult.success()
   }
 
-  override def localizedDescription(implicit locale: Locale): Option[Text] = Some(KLResource.getText("cmd.plugin.description", "plugin" -> plugin.container.name))
+  override def localizedDescription(implicit locale: Locale): Option[Text] =
+    Some(KLResource.getText("cmd.plugin.description", "plugin" -> plugin.container.name))
 
   override def commandSpec: CommandSpec =
     CommandSpec

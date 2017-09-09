@@ -14,8 +14,9 @@ abstract class LocalizedCommand(parent: Option[CommandBase])(implicit plugin: Ka
   def localizedDescription(implicit locale: Locale):         Option[Text] = None
   def localizedExtendedDescription(implicit locale: Locale): Option[Text] = None
 
-  override def description(src: CommandSource):         Option[Text] = Localized(src)(implicit locale => localizedDescription)
-  override def extendedDescription(src: CommandSource): Option[Text] = Localized(src)(implicit locale => localizedExtendedDescription)
+  override def description(src: CommandSource): Option[Text] = Localized(src)(implicit locale => localizedDescription)
+  override def extendedDescription(src: CommandSource): Option[Text] =
+    Localized(src)(implicit locale => localizedExtendedDescription)
 }
 
 object LocalizedCommand {

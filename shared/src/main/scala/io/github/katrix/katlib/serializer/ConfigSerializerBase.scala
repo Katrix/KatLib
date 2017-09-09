@@ -49,7 +49,7 @@ object ConfigSerializerBase {
     implicit val doubleSerializer:  ConfigSerializer[Double]  = primitiveSerializer(classOf[Double])
     implicit val stringSerializer:  ConfigSerializer[String]  = primitiveSerializer(classOf[String])
 
-    implicit def seqSerializer[A: ConfigSerializer] = new ConfigSerializer[Seq[A]] {
+    implicit def seqSerializer[A: ConfigSerializer]: ConfigSerializer[Seq[A]] = new ConfigSerializer[Seq[A]] {
       override def write(obj: Seq[A], node: ConfigNode): ConfigNode  = node.writeList(obj)
       override def read(node: ConfigNode):               Try[Seq[A]] = node.readList[A]
     }
@@ -57,7 +57,7 @@ object ConfigSerializerBase {
 
   trait CaseClassSerializer {
 
-    implicit def hNilSerializer = new ConfigSerializer[HNil] {
+    implicit def hNilSerializer: ConfigSerializer[HNil] = new ConfigSerializer[HNil] {
       override def write(obj: HNil, node: ConfigNode): ConfigNode = node
       override def read(node: ConfigNode):             Try[HNil]  = Success(HNil)
     }
@@ -116,7 +116,10 @@ object ConfigSerializerBase {
       }
     }
 
-    implicit def caseSerializer[A, Repr](implicit gen: LabelledGeneric.Aux[A, Repr], ser: Lazy[ConfigSerializer[Repr]]): ConfigSerializer[A] =
+    implicit def caseSerializer[A, Repr](
+        implicit gen: LabelledGeneric.Aux[A, Repr],
+        ser: Lazy[ConfigSerializer[Repr]]
+    ): ConfigSerializer[A] =
       new ConfigSerializer[A] {
         override def write(obj: A, node: ConfigNode): ConfigNode = ser.value.write(gen.to(obj), node)
         override def read(node: ConfigNode):          Try[A]     = ser.value.read(node).map(gen.from)

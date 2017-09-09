@@ -38,12 +38,16 @@ object KatLibTypeSerializers {
       val entryType   = `type`.resolveType(tag.runtimeClass.getTypeParameters.apply(0))
       val entrySerial = node.getOptions.getSerializers.get(entryType)
       if (entrySerial == null)
-        throw new ObjectMappingException(s"No applicable type serializer for type $entryType when trying to serialize ${`type`}")
+        throw new ObjectMappingException(
+          s"No applicable type serializer for type $entryType when trying to serialize ${`type`}"
+        )
 
       node.setValue(ImmutableList.of)
       for (ent <- obj) {
         //Lot's of ugly casts
-        entrySerial.asInstanceOf[TypeSerializer[Any]].serialize(entryType.asInstanceOf[TypeToken[Any]], ent, node.getAppendedNode)
+        entrySerial
+          .asInstanceOf[TypeSerializer[Any]]
+          .serialize(entryType.asInstanceOf[TypeToken[Any]], ent, node.getAppendedNode)
       }
     }
 
@@ -51,7 +55,9 @@ object KatLibTypeSerializers {
       val entryType   = `type`.resolveType(tag.runtimeClass.getTypeParameters.apply(0))
       val entrySerial = node.getOptions.getSerializers.get(entryType)
       if (entrySerial == null)
-        throw new ObjectMappingException(s"No applicable type serializer for type $entryType when trying to deserialize ${`type`}")
+        throw new ObjectMappingException(
+          s"No applicable type serializer for type $entryType when trying to deserialize ${`type`}"
+        )
 
       if (node.hasListChildren) {
         val children = node.getChildrenList.asScala

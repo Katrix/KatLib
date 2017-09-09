@@ -40,12 +40,13 @@ abstract class CommandBase(val parent: Option[CommandBase])(implicit plugin: Kat
   def children: Seq[CommandBase] = Nil
 
   def description(src: CommandSource): Option[Text] = commandSpec.getShortDescription(src).toOption
-  def extendedDescription(src: CommandSource): Option[Text] = Option(CommandBase.extendedDescriptionField.get(commandSpec).asInstanceOf[Text])
+  def extendedDescription(src: CommandSource): Option[Text] =
+    Option(CommandBase.extendedDescriptionField.get(commandSpec).asInstanceOf[Text])
   def usage(src: CommandSource): Text = commandSpec.getUsage(src)
 
   def help(src: CommandSource): Text = {
     val builder = Text.builder
-    val desc = description(src)
+    val desc    = description(src)
     desc.foreach(builder.append(_, Text.NEW_LINE))
     builder.append(usage(src))
     extendedDescription(src).foreach(builder.append(Text.NEW_LINE, _))
@@ -60,7 +61,8 @@ abstract class CommandBase(val parent: Option[CommandBase])(implicit plugin: Kat
   protected def registerSubcommands(builder: CommandSpec.Builder): Unit =
     children.foreach(command => builder.child(command.commandSpec, command.aliases: _*))
 
-  def nonPlayerErrorLocalized(implicit locale: Locale): CommandException = new CommandException(t"$RED${KLResource.get("command.error.nonPlayer")}")
+  def nonPlayerErrorLocalized(implicit locale: Locale): CommandException =
+    new CommandException(t"$RED${KLResource.get("command.error.nonPlayer")}")
   def playerNotFoundErrorLocalized(implicit locale: Locale): CommandException =
     new CommandException(t"$RED${KLResource.get("command.error.playerNotFound")}")
   def invalidParameterErrorLocalized(implicit locale: Locale): CommandException =
@@ -80,7 +82,8 @@ object CommandBase {
 
   private val extendedDescriptionField = classOf[CommandSpec].getField("extendedDescription")
 
-  def nonPlayerErrorLocalized(implicit locale: Locale): CommandException = new CommandException(t"$RED${KLResource.get("command.error.nonPlayer")}")
+  def nonPlayerErrorLocalized(implicit locale: Locale): CommandException =
+    new CommandException(t"$RED${KLResource.get("command.error.nonPlayer")}")
   def playerNotFoundErrorLocalized(implicit locale: Locale): CommandException =
     new CommandException(t"$RED${KLResource.get("command.error.playerNotFound")}")
   def invalidParameterErrorLocalized(implicit locale: Locale): CommandException =
@@ -91,7 +94,8 @@ object CommandBase {
   @Deprecated
   def playerNotFoundError: CommandException = playerNotFoundErrorLocalized(Localized.Default)
   @Deprecated
-  def notFoundError(notFound: String, lookFor: String): CommandException = new CommandException(t"$RED$notFound $lookFor was not found")
+  def notFoundError(notFound: String, lookFor: String): CommandException =
+    new CommandException(t"$RED$notFound $lookFor was not found")
   @Deprecated
   def invalidParameterError: CommandException = invalidParameterErrorLocalized(Localized.Default)
 

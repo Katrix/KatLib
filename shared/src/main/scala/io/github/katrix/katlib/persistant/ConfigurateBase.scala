@@ -50,8 +50,9 @@ abstract class ConfigurateBase[A, NodeType <: ConfigurationNode, LoaderType <: C
   protected def loadRoot(): NodeType =
     Try(cfgLoader.load()).recover {
       case e: IOException =>
-        LogHelper.error(s"""Could not load configurate file for ${plugin.container.name}.
-						 |If this is the first time starting the plugin this is normal""".stripMargin, e)
+        LogHelper.error(
+          s"""Could not load configurate file for ${plugin.container.name}.
+             |If this is the first time starting the plugin this is normal""".stripMargin, e)
         cfgLoader.createEmptyNode()
     }.get
 
