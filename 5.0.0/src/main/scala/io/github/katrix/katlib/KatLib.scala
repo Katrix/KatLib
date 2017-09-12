@@ -23,7 +23,6 @@ package io.github.katrix.katlib
 import java.nio.file.Path
 
 import org.slf4j.Logger
-import org.spongepowered.api.Platform.Component
 import org.spongepowered.api.Sponge
 import org.spongepowered.api.config.ConfigDir
 import org.spongepowered.api.event.Listener
@@ -33,15 +32,14 @@ import org.spongepowered.api.plugin.{Plugin, PluginContainer}
 import com.google.inject.Inject
 
 import io.github.katrix.katlib.helper.Implicits.RichOptional
-import io.github.katrix.katlib.helper.LogHelper
 import io.github.katrix.katlib.lib.LibKatLibPlugin
-import io.github.katrix.katlib.persistant.{CommentedConfigValue, Config, KatLibTypeSerializers}
+import io.github.katrix.katlib.persistant.KatLibTypeSerializers
 
 object KatLib {
 
   final val CompiledAgainst = "5.0.0"
-  final val Version         = s"$CompiledAgainst-2.2.0"
-  final val ConstantVersion = "5.0.0-2.2.0"
+  final val Version         = s"2.2.0-$CompiledAgainst"
+  final val ConstantVersion = "2.2.0-5.0.0"
   assert(Version == ConstantVersion)
 
   private var _plugin: KatLib = _
