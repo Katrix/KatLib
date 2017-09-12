@@ -65,8 +65,14 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Lo
         val pages = PaginationList.builder()
         pages.title(t"$RED${KLResource.get("cmd.help.pageTitle", "plugin" -> plugin.container.name)}")
 
-        val text = commandParents.keys.toSeq.flatMap(commandBase => getCommandHelp(commandBase, src)).sorted
-        pages.contents(text.asJavaCollection)
+        if(commandParents.nonEmpty) {
+          val text = commandParents.keys.toSeq.flatMap(commandBase => getCommandHelp(commandBase, src)).sorted
+          pages.contents(text.asJavaCollection)
+        }
+        else {
+          pages.contents(t"${RED}No commands found")
+        }
+
         pages.sendTo(src)
         CommandResult.success()
       case Some(commandName) =>

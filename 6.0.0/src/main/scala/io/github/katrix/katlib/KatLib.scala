@@ -65,6 +65,7 @@ class KatLib @Inject()(logger: Logger, @ConfigDir(sharedRoot = true) configDir: 
   @Listener
   def gameInit(event: GameInitializationEvent): Unit = {
     checkSpongeVersion(Sponge.getPlatform.getContainer(Component.API).getVersion.toOption, KatLib.CompiledAgainst)
+    pluginCmd.registerHelp()
     Sponge.getCommandManager.register(this, pluginCmd.commandSpec, pluginCmd.aliases: _*)
   }
 }
