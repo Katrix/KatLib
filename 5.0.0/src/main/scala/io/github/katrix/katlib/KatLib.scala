@@ -27,7 +27,7 @@ import org.spongepowered.api.Sponge
 import org.spongepowered.api.config.ConfigDir
 import org.spongepowered.api.event.Listener
 import org.spongepowered.api.event.game.state.{GameConstructionEvent, GameInitializationEvent}
-import org.spongepowered.api.plugin.{Plugin, PluginContainer}
+import org.spongepowered.api.plugin.{Dependency, Plugin, PluginContainer}
 
 import com.google.inject.Inject
 
@@ -50,7 +50,8 @@ object KatLib {
   id = LibKatLibPlugin.Id,
   name = LibKatLibPlugin.Name,
   version = KatLib.ConstantVersion,
-  authors = Array("Katrix")
+  authors = Array("Katrix"),
+  dependencies = Array(new Dependency(id = "spongeapi", version = KatLib.CompiledAgainst))
 )
 class KatLib @Inject()(logger: Logger, @ConfigDir(sharedRoot = true) configDir: Path, container: PluginContainer)
     extends ImplKatPlugin(logger, configDir, container) with KatLibBase {
