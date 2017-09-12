@@ -23,6 +23,7 @@ package io.github.katrix.katlib
 import java.nio.file.Path
 
 import org.slf4j.Logger
+import org.spongepowered.api.Platform.Component
 import org.spongepowered.api.Sponge
 import org.spongepowered.api.config.ConfigDir
 import org.spongepowered.api.event.Listener
@@ -37,9 +38,9 @@ import io.github.katrix.katlib.persistant.KatLibTypeSerializers
 
 object KatLib {
 
-  final val CompiledAgainst = "4.1.0"
+  final val CompiledAgainst = "7.0.0"
   final val Version         = s"2.3.0-$CompiledAgainst"
-  final val ConstantVersion = "2.3.0-4.1.0"
+  final val ConstantVersion = "2.3.0-7.0.0"
   assert(Version == ConstantVersion)
 
   private var _plugin: KatLib = _
@@ -64,7 +65,7 @@ class KatLib @Inject()(logger: Logger, @ConfigDir(sharedRoot = true) configDir: 
 
   @Listener
   def gameInit(event: GameInitializationEvent): Unit = {
-    checkSpongeVersion(Sponge.getPlatform.getApi.getVersion.toOption, KatLib.CompiledAgainst)
+    checkSpongeVersion(Sponge.getPlatform.getContainer(Component.API).getVersion.toOption, KatLib.CompiledAgainst)
     pluginCmd.registerHelp()
     Sponge.getCommandManager.register(this, pluginCmd.commandSpec, pluginCmd.aliases: _*)
   }

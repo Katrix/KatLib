@@ -36,41 +36,51 @@ import ninja.leaping.configurate.objectmapping.ObjectMappingException
 	*/
 sealed trait ConfigValue[A, NodeType <: ConfigurationNode] {
   type Self <: ConfigValue[A, NodeType]
-  def value: A
+  def value:             A
   def value_=(value: A): Self
-  def typeToken: TypeToken[A]
-  def path:      Seq[String]
+  def typeToken:         TypeToken[A]
+  def path:              Seq[String]
 
   def applyToNode(node: NodeType): Unit
 }
 
-final case class DataConfigValue[A](value: A, implicit val typeToken: TypeToken[A], path: Seq[String]) extends ConfigValue[A, ConfigurationNode] {
+final case class DataConfigValue[A](value: A, implicit val typeToken: TypeToken[A], path: Seq[String])
+    extends ConfigValue[A, ConfigurationNode] {
   override type Self = DataConfigValue[A]
   override def applyToNode(node: ConfigurationNode): Unit = node.getNode(path: _*).value_=(value)
-  override def value_=(value:    A):                 Self = copy(value = value)
+  override def value_=(value: A):                    Self = copy(value = value)
 }
-final case class CommentedConfigValue[A](value: A, implicit val typeToken: TypeToken[A], comment: String, path: Seq[String])
-    extends ConfigValue[A, CommentedConfigurationNode] {
+final case class CommentedConfigValue[A](
+    value: A,
+    implicit val typeToken: TypeToken[A],
+    comment: String,
+    path: Seq[String]
+) extends ConfigValue[A, CommentedConfigurationNode] {
   override type Self = CommentedConfigValue[A]
-  override def applyToNode(node: CommentedConfigurationNode): Unit = node.getNode(path: _*).setComment(comment).value_=(value)
-  override def value_=(value:    A):                          Self = copy(value = value)
+  override def applyToNode(node: CommentedConfigurationNode): Unit =
+    node.getNode(path: _*).setComment(comment).value_=(value)
+  override def value_=(value: A): Self = copy(value = value)
 }
 
 object ConfigValue {
 
-  def apply[A: TypeToken](value: A, comment: String, path: Seq[String]): CommentedConfigValue[A] =
-    CommentedConfigValue(value, implicitly[TypeToken[A]], comment, path)
+  def apply[A](value: A, comment: String, path: Seq[String])(implicit ev: TypeToken[A]): CommentedConfigValue[A] =
+    CommentedConfigValue(value, ev, comment, path)
 
-  def apply[A: TypeToken](value: A, path: Seq[String]): DataConfigValue[A] =
-    DataConfigValue(value, implicitly[TypeToken[A]], path)
+  def apply[A](value: A, path: Seq[String])(implicit ev: TypeToken[A]): DataConfigValue[A] =
+    DataConfigValue(value, ev, path)
 
-  def apply[A, NodeType <: ConfigurationNode](node:     NodeType,
-                                              existing: ConfigValue[A, NodeType])(implicit plugin: KatPlugin): ConfigValue[A, NodeType] =
+  def apply[A, NodeType <: ConfigurationNode](node: NodeType, existing: ConfigValue[A, NodeType])(
+      implicit plugin: KatPlugin
+  ): ConfigValue[A, NodeType] =
     Try(Option(node.getNode(existing.path: _*).getValue(existing.typeToken)).get)
       .map(found => existing.value = found)
       .recover {
         case e: ObjectMappingException =>
-          LogHelper.error(s"Failed to deserialize value of ${existing.path.mkString(".")}, using the default instead", e)
+          LogHelper.error(
+            s"Failed to deserialize value of ${existing.path.mkString(".")}, using the default instead",
+            e
+          )
           existing
         case _: NoSuchElementException =>
           LogHelper.warn(s"No value found for ${existing.path.mkString(".")}, using default instead")

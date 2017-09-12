@@ -27,25 +27,34 @@ lazy val noJitpackSettings = Seq(
 lazy val commonSettings = Seq(
   name := s"KatLib-${removeSnapshot(spongeApiVersion.value)}",
   organization := "io.github.katrix",
-  version := "2.2.0",
-  scalaVersion := "2.12.1",
+  version := "2.3.0",
+  scalaVersion := "2.12.2",
   assemblyShadeRules in assembly := Seq(
     ShadeRule.rename("scala.**"     -> "io.github.katrix.katlib.shade.scala.@1").inAll,
     ShadeRule.rename("shapeless.**" -> "io.github.katrix.katlib.shade.shapeless.@1").inAll
   ),
-  scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-Xlint", "-Yno-adapted-args", "-Ywarn-dead-code", "-Ywarn-unused-import"),
+  scalacOptions ++= Seq(
+    "-deprecation",
+    "-feature",
+    "-unchecked",
+    "-Xlint",
+    "-Yno-adapted-args",
+    "-Ywarn-dead-code",
+    "-Ywarn-unused-import"
+  ),
   crossPaths := false,
   spongePluginInfo := spongePluginInfo.value.copy(
     id = "katlib",
     name = Some("KatLib"),
-    version = Some(s"${removeSnapshot(spongeApiVersion.value)}-${version.value}"),
+    version = Some(s"${version.value}-${removeSnapshot(spongeApiVersion.value)}"),
     authors = Seq("Katrix"),
     dependencies = Set(DependencyInfo("spongeapi", Some(removeSnapshot(spongeApiVersion.value))))
   ),
-  libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.2" exclude ("org.typelevel", "macro-compat_2.12") //Don't think macro-compat needs to be in the jar
+  libraryDependencies += "com.chuusai"   %% "shapeless"  % "2.3.2" exclude ("org.typelevel", "macro-compat_2.12"), //Don't think macro-compat needs to be in the jar
+  libraryDependencies += "org.jetbrains" % "annotations" % "15.0" % Provided
 )
 
-lazy val usedSettings = if(isJitpack) commonSettings else commonSettings ++ noJitpackSettings
+lazy val usedSettings = if (isJitpack) commonSettings else commonSettings ++ noJitpackSettings
 
 lazy val katLibShared = (project in file("shared"))
   .enablePlugins(SpongePlugin)
@@ -55,10 +64,10 @@ lazy val katLibShared = (project in file("shared"))
     name := "KatLib-Shared",
     //Default version, needs to build correctly against all supported versions
     spongeApiVersion := "4.1.0",
-    libraryDependencies += "org.scalameta" %% "scalameta" % "1.6.0" % Provided,
+    libraryDependencies += "org.scalameta" %% "scalameta" % "1.8.0" % Provided,
     resolvers += Resolver.sonatypeRepo("releases"),
     resolvers += Resolver.bintrayIvyRepo("scalameta", "maven"),
-    addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M7" cross CrossVersion.full),
+    addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M9" cross CrossVersion.full),
     scalacOptions += "-Xplugin-require:macroparadise",
     scalacOptions in (Compile, console) := Seq(), //macroparadise plugin doesn't work in repl yet.
     sources in (Compile, doc) := Nil, //macroparadise doesn't work with scaladoc yet.
@@ -68,26 +77,22 @@ lazy val katLibShared = (project in file("shared"))
 lazy val katLibV410 = (project in file("4.1.0"))
   .enablePlugins(SpongePlugin)
   .dependsOn(katLibShared)
-  .settings(
-    usedSettings,
-    spongeApiVersion := "4.1.0"
-  )
+  .settings(usedSettings, spongeApiVersion := "4.1.0")
 
 lazy val katLibV500 = (project in file("5.0.0"))
   .enablePlugins(SpongePlugin)
   .dependsOn(katLibShared)
-  .settings(
-    usedSettings,
-    spongeApiVersion := "5.0.0"
-  )
+  .settings(usedSettings, spongeApiVersion := "5.0.0")
 
 lazy val katLibV600 = (project in file("6.0.0"))
   .enablePlugins(SpongePlugin)
   .dependsOn(katLibShared)
-  .settings(
-    usedSettings,
-    spongeApiVersion := "6.0.0"
-  )
+  .settings(usedSettings, spongeApiVersion := "6.0.0")
+
+lazy val katLibV700 = (project in file("7.0.0"))
+  .enablePlugins(SpongePlugin)
+  .dependsOn(katLibShared)
+  .settings(usedSettings, spongeApiVersion := "7.0.0-SNAPSHOT")
 
 lazy val katLibRoot = (project in file("."))
   .settings(
@@ -98,4 +103,4 @@ lazy val katLibRoot = (project in file("."))
     publishLocal := {}
   )
   .disablePlugins(AssemblyPlugin)
-  .aggregate(katLibShared, katLibV410, katLibV500, katLibV600)
+  .aggregate(katLibShared, katLibV410, katLibV500, katLibV600, katLibV700)

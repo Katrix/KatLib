@@ -32,9 +32,9 @@ import ninja.leaping.configurate.ConfigurationNode
 import ninja.leaping.configurate.loader.ConfigurationLoader
 
 abstract class ConfigurateBase[A, NodeType <: ConfigurationNode, LoaderType <: ConfigurationLoader[NodeType]](
-  configDir:       Path,
-  name:            String,
-  pathToLoader:    Path => LoaderType
+    configDir: Path,
+    name: String,
+    pathToLoader: Path => LoaderType
 )(implicit plugin: KatPlugin) {
 
   protected val path:      Path       = configDir.resolve(name)
@@ -50,12 +50,13 @@ abstract class ConfigurateBase[A, NodeType <: ConfigurationNode, LoaderType <: C
   protected def loadRoot(): NodeType =
     Try(cfgLoader.load()).recover {
       case e: IOException =>
-        LogHelper.error(s"""Could not load configurate file for ${plugin.container.name}.
-						 |If this is the first time starting the plugin this is normal""".stripMargin, e)
+        LogHelper.error(
+          s"""Could not load configurate file for ${plugin.container.name}.
+             |If this is the first time starting the plugin this is normal""".stripMargin, e)
         cfgLoader.createEmptyNode()
     }.get
 
-  def loadData: A
+  def loadData:          A
   def saveData(data: A): Unit
 
   protected def saveFile(): Future[Unit] = {
