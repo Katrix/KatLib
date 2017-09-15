@@ -20,7 +20,9 @@
  */
 package io.github.katrix.katlib.command
 
-import java.util.Locale
+import java.util.{Locale, Optional}
+
+import scala.util.Try
 
 import org.spongepowered.api.command.spec.{CommandExecutor, CommandSpec}
 import org.spongepowered.api.command.{CommandException, CommandSource}
@@ -41,7 +43,20 @@ abstract class CommandBase(val parent: Option[CommandBase])(implicit plugin: Kat
 
   def description(src: CommandSource): Option[Text] = commandSpec.getShortDescription(src).toOption
   def extendedDescription(src: CommandSource): Option[Text] =
-    Option(CommandBase.extendedDescriptionField.get(commandSpec).asInstanceOf[Text])
+    Try {
+      CommandBase.extendedDescriptionField.flatMap {
+        _.get(commandSpec) match {
+          case opt: Optional[Text @unchecked] =>
+            opt.orElse(null) match {
+              case t: Text => Option(t)
+              case _       => None
+            }
+          case t: Text => Option(t)
+          case _ => None
+        }
+      }
+    }.toOption.flatten
+
   def usage(src: CommandSource): Text = commandSpec.getUsage(src)
 
   def help(src: CommandSource): Text = {
@@ -80,7 +95,7 @@ abstract class CommandBase(val parent: Option[CommandBase])(implicit plugin: Kat
 
 object CommandBase {
 
-  private val extendedDescriptionField = classOf[CommandSpec].getField("extendedDescription")
+  private val extendedDescriptionField = Option(classOf[CommandSpec].getField("extendedDescription"))
 
   def nonPlayerErrorLocalized(implicit locale: Locale): CommandException =
     new CommandException(t"$RED${KLResource.get("command.error.nonPlayer")}")
