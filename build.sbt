@@ -63,7 +63,7 @@ lazy val katLibShared = (project in file("shared"))
     spongeMetaCreate := false,
     name := "KatLib-Shared",
     //Default version, needs to build correctly against all supported versions
-    spongeApiVersion := "4.1.0",
+    spongeApiVersion := "5.0.0",
     libraryDependencies += "org.scalameta" %% "scalameta" % "1.8.0" % Provided,
     resolvers += Resolver.sonatypeRepo("releases"),
     resolvers += Resolver.bintrayIvyRepo("scalameta", "maven"),
@@ -73,11 +73,6 @@ lazy val katLibShared = (project in file("shared"))
     sources in (Compile, doc) := Nil, //macroparadise doesn't work with scaladoc yet.
     libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
   )
-
-lazy val katLibV410 = (project in file("4.1.0"))
-  .enablePlugins(SpongePlugin)
-  .dependsOn(katLibShared)
-  .settings(usedSettings, spongeApiVersion := "4.1.0")
 
 lazy val katLibV500 = (project in file("5.0.0"))
   .enablePlugins(SpongePlugin)
@@ -103,4 +98,4 @@ lazy val katLibRoot = (project in file("."))
     publishLocal := {}
   )
   .disablePlugins(AssemblyPlugin)
-  .aggregate(katLibShared, katLibV410, katLibV500, katLibV600, katLibV700)
+  .aggregate(katLibShared, katLibV500, katLibV600, katLibV700)
