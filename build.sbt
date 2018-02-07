@@ -1,8 +1,6 @@
 def removeSnapshot(str: String): String = if (str.endsWith("-SNAPSHOT")) str.substring(0, str.length - 9) else str
 
-lazy val isJitPack = sys.env.getOrElse("JITPACK", "false").toBoolean
-
-def deployKeySetting = oreDeploymentKey := (if(isJitPack) Deploy.key else None)
+def deployKeySetting = oreDeploymentKey := (oreDeploymentKey in Scope.Global).value
 
 lazy val commonSettings = Seq(
   name := s"KatLib-${removeSnapshot(spongeApiVersion.value)}",
