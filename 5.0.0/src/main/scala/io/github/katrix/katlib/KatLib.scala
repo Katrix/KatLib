@@ -38,8 +38,8 @@ import io.github.katrix.katlib.persistant.KatLibTypeSerializers
 object KatLib {
 
   final val CompiledAgainst = "5.0.0"
-  final val Version         = s"2.3.1-$CompiledAgainst"
-  final val ConstantVersion = "2.3.1-5.0.0"
+  final val Version         = s"2.4.0-$CompiledAgainst"
+  final val ConstantVersion = "2.4.0-5.0.0"
   assert(Version == ConstantVersion)
 
   private var _plugin: KatLib = _
