@@ -73,7 +73,7 @@ final class CmdHelp(cmdPlugin: CmdPlugin)(implicit plugin: KatPlugin) extends Lo
           pages.contents(t"${RED}No commands found")
         }
 
-        pages.sendTo(src)
+        plugin.globalVersionAdapter.sendPagination(pages, src)
         CommandResult.success()
       case Some(commandName) =>
         val data = for {

@@ -55,7 +55,7 @@ object KatLib {
   dependencies = Array(new Dependency(id = "spongeapi", version = KatLib.CompiledAgainst))
 )
 class KatLib @Inject()(logger: Logger, @ConfigDir(sharedRoot = true) configDir: Path, container: PluginContainer)
-    extends ImplKatPlugin(logger, configDir, container) with KatLibBase {
+    extends ImplKatPlugin(logger, configDir, container) with KatLibBase with KatPlugin600 {
 
   @Listener
   def gameConstruct(event: GameConstructionEvent): Unit = {

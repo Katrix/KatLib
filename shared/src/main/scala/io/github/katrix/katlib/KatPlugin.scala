@@ -26,12 +26,15 @@ import scala.concurrent.ExecutionContextExecutorService
 
 import org.slf4j.Logger
 import org.spongepowered.api.scheduler.SpongeExecutorService
+import org.spongepowered.api.service.pagination.PaginationList
+import org.spongepowered.api.text.channel.MessageReceiver
 
 import io.github.katrix.katlib.command.CmdPlugin
 import io.github.katrix.katlib.helper.Implicits.PluginContainer
+import io.github.katrix.katlib.helper.LogHelper
 import io.github.katrix.katlib.persistant.Config
 
-trait KatPlugin {
+trait KatPlugin { self =>
 
   def logger: Logger
 
@@ -52,4 +55,16 @@ trait KatPlugin {
 		* The config for the plugin
 		*/
   def config: Config
+
+  /**
+    * A version adapter that concerns stuff in KatLib itself.
+    */
+  def globalVersionAdapter: GlobalVersionAdapter = new GlobalVersionAdapter {
+
+    //Default possibly not working implementation
+    override def sendPagination(paginationList: PaginationList.Builder, receiver: MessageReceiver): Unit = {
+      LogHelper.warn("Used default global version helper. This can cause errors in newer API releases.")(self)
+      paginationList.sendTo(receiver)
+    }
+  }
 }
