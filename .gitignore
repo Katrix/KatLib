@@ -27,6 +27,7 @@ run
 target
 project/target
 publish
+/project/DeployKey.scala
 
 #mac
 .DS_Store
