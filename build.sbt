@@ -1,5 +1,9 @@
 def removeSnapshot(str: String): String = if (str.endsWith("-SNAPSHOT")) str.substring(0, str.length - 9) else str
 
+lazy val isJitPack = sys.env.getOrElse("JITPACK", "false").toBoolean
+
+def deployKeySetting = oreDeploymentKey := (if(isJitPack) Deploy.key else None)
+
 lazy val commonSettings = Seq(
   name := s"KatLib-${removeSnapshot(spongeApiVersion.value)}",
   organization := "io.github.katrix",
@@ -54,17 +58,17 @@ lazy val katLibShared = (project in file("shared"))
 lazy val katLibV500: Project = (project in file("5.0.0"))
   .enablePlugins(SpongePlugin)
   .dependsOn(katLibShared)
-  .settings(commonSettings, spongeApiVersion := "5.0.0", oreDeploymentKey := DeployKey.key)
+  .settings(commonSettings, spongeApiVersion := "5.0.0", deployKeySetting)
 
 lazy val katLibV600: Project = (project in file("6.0.0"))
   .enablePlugins(SpongePlugin)
   .dependsOn(katLibShared)
-  .settings(commonSettings, spongeApiVersion := "6.0.0", oreDeploymentKey := DeployKey.key)
+  .settings(commonSettings, spongeApiVersion := "6.0.0", deployKeySetting)
 
 lazy val katLibV700: Project = (project in file("7.0.0"))
   .enablePlugins(SpongePlugin)
   .dependsOn(katLibShared)
-  .settings(commonSettings, spongeApiVersion := "7.0.0", oreDeploymentKey := DeployKey.key)
+  .settings(commonSettings, spongeApiVersion := "7.0.0", deployKeySetting)
 
 lazy val katLibRoot = (project in file("."))
   .settings(
