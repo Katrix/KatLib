@@ -39,8 +39,8 @@ import io.github.katrix.katlib.persistant.KatLibTypeSerializers
 object KatLib {
 
   final val CompiledAgainst = "6.0.0"
-  final val Version         = s"2.3.1-$CompiledAgainst"
-  final val ConstantVersion = "2.3.1-6.0.0"
+  final val Version         = s"2.4.0-$CompiledAgainst"
+  final val ConstantVersion = "2.4.0-6.0.0"
   assert(Version == ConstantVersion)
 
   private var _plugin: KatLib = _
@@ -55,7 +55,7 @@ object KatLib {
   dependencies = Array(new Dependency(id = "spongeapi", version = KatLib.CompiledAgainst))
 )
 class KatLib @Inject()(logger: Logger, @ConfigDir(sharedRoot = true) configDir: Path, container: PluginContainer)
-    extends ImplKatPlugin(logger, configDir, container) with KatLibBase {
+    extends ImplKatPlugin(logger, configDir, container) with KatLibBase with KatPlugin600 {
 
   @Listener
   def gameConstruct(event: GameConstructionEvent): Unit = {
