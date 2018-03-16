@@ -19,6 +19,7 @@ lazy val katLib = crossProject(SpongePlatform("5.0.0"), SpongePlatform("6.0.0"),
       "-Ywarn-unused-import"
     ),
     crossPaths := false,
+    resolvers += Resolver.sonatypeRepo("snapshots"),
     libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
     libraryDependencies += "com.chuusai"    %% "shapeless"    % "2.3.3",
     libraryDependencies += "org.jetbrains"  % "annotations"   % "15.0" % Provided,
