@@ -7,10 +7,10 @@ import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 import scala.util.Try
 
+import org.spongepowered.api.data.DataSerializable
 import org.spongepowered.api.data.persistence.DataFormats
-import org.spongepowered.api.data.{DataContainer, DataSerializable, Queries}
 import org.spongepowered.api.text.format.{TextColor, TextColors, TextFormat, TextStyle, TextStyles}
-import org.spongepowered.api.text.{BookView, LiteralText, Text, TextTemplate}
+import org.spongepowered.api.text.{LiteralText, Text, TextTemplate}
 import org.spongepowered.api.{CatalogType, Sponge}
 
 import io.circe._
@@ -39,13 +39,13 @@ trait SpongeProtocol {
     case Conf.Str(s) => Try(UUID.fromString(s)).fold(Configured.exception(_), Configured.ok)
   }
 
-  implicit val urlConfDecoder: ConfDecoder[URL] = ConfDecoder.instanceF {
+  implicit val urlConfDecoder: ConfDecoder[URL] = ConfDecoder.instance {
     case Conf.Str(s) => Try(new URL(s)).fold(Configured.exception(_), Configured.ok)
   }
   implicit val urlDecoder: Decoder[URL] = Decoder.decodeString.emapTry(s => Try(new URL(s)))
   implicit val urlEncoder: Encoder[URL] = Encoder.encodeString.contramap(_.toString)
 
-  implicit val uriConfDecoder: ConfDecoder[URI] = ConfDecoder.instanceF {
+  implicit val uriConfDecoder: ConfDecoder[URI] = ConfDecoder.instance {
     case Conf.Str(s) => Try(new URI(s)).fold(Configured.exception(_), Configured.ok)
   }
   implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.emapTry(s => Try(new URI(s)))
@@ -81,7 +81,7 @@ trait SpongeProtocol {
         .toRight(DecodingFailure(s"Invalid $classTag", c.history));
     }
 
-  implicit def dataSerializableEncoder[A <: DataSerializable](implicit classTag: ClassTag[A]): Encoder[A] =
+  implicit def dataSerializableEncoder[A <: DataSerializable]: Encoder[A] =
     Encoder.instance { a =>
       parser.parse(DataFormats.JSON.write(a.toContainer)).right.get
     }
