@@ -1,7 +1,6 @@
 package io.github.katrix.katlib
 
 import io.github.katrix.katlib.helper.LogHelper
-import io.github.katrix.katlib.persistant.{CommentedConfigValue, Config}
 
 trait KatLibBase extends KatPlugin {
 

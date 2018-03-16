@@ -27,9 +27,7 @@ import scala.concurrent.ExecutionContextExecutorService
 import org.slf4j.Logger
 import org.spongepowered.api.scheduler.SpongeExecutorService
 
-import io.github.katrix.katlib.command.CmdPlugin
 import io.github.katrix.katlib.helper.Implicits.PluginContainer
-import io.github.katrix.katlib.persistant.Config
 
 trait KatPlugin { self =>
 

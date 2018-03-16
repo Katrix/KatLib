@@ -29,7 +29,6 @@ import org.spongepowered.api.Sponge
 import org.spongepowered.api.plugin.{PluginContainer => SpongePluginContainer}
 import org.spongepowered.api.scheduler.SpongeExecutorService
 
-import io.github.katrix.katlib.command.CmdPlugin
 import io.github.katrix.katlib.helper.Implicits.PluginContainer
 
 abstract class ImplKatPlugin(val logger: Logger, val configDir: Path, spongeContainer: SpongePluginContainer)

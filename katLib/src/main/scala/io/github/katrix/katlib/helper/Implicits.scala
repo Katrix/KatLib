@@ -32,19 +32,15 @@ import scala.util.Try
 
 import org.slf4j.Logger
 import org.spongepowered.api.asset.Asset
-import org.spongepowered.api.command.args.CommandContext
 import org.spongepowered.api.data.persistence.{DataBuilder, DataContentUpdater}
 import org.spongepowered.api.data.{DataManager, DataSerializable, DataView, ImmutableDataBuilder, ImmutableDataHolder}
 import org.spongepowered.api.plugin.{PluginContainer => SpongePluginContainer}
 import org.spongepowered.api.service.{ProviderRegistration, ServiceManager}
-import org.spongepowered.api.text.format.{TextColor, TextColors, TextStyle}
 import org.spongepowered.api.text.{Text, TextTemplate}
 
 import com.google.common.reflect.TypeToken
 
-import ninja.leaping.configurate.ConfigurationNode
-
-object Implicits {
+object Implicits extends SpongeProtocol {
 
   implicit class RichString(val string: String) extends AnyVal {
 
