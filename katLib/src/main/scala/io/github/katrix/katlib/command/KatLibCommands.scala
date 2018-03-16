@@ -32,7 +32,7 @@ trait KatLibCommands extends SpongeBaseAll {
       .filter(_.command.testPermission(source))
       .sortBy(_.aliases.head)
       .flatMap { child =>
-        createCommandHelp(
+        createTreeCommandHelp(
           source,
           child.aliases.mkString("/", "|", ""),
           s"/${child.aliases.head}",
@@ -56,13 +56,13 @@ trait KatLibCommands extends SpongeBaseAll {
       val pages       = PaginationList.builder()
       pages
         .title(title)
-        .contents(createCommandHelp(source, commandName, commandName, command, detail = true): _*)
+        .contents(createTreeCommandHelp(source, commandName, commandName, command, detail = true): _*)
         .sendTo(source)
       Command.successStep()
     } else Command.errorStep("You don't have the permission to see the help for this command")
   }
 
-  def createCommandHelp(
+  def createTreeCommandHelp(
       source: CommandSource,
       commandName: String,
       fullCommandName: String,
@@ -93,7 +93,7 @@ trait KatLibCommands extends SpongeBaseAll {
 
       val childrenTopHelp = children.init.flatMap {
         case ChildCommand(aliases, childCommand) =>
-          createCommandHelp(
+          createTreeCommandHelp(
             source,
             aliases.mkString("|"),
             s"$fullCommandName ${aliases.head}",
@@ -103,7 +103,7 @@ trait KatLibCommands extends SpongeBaseAll {
           )
       }
       val lastChild = children.last
-      val lastChildHelp = createCommandHelp(
+      val lastChildHelp = createTreeCommandHelp(
         source,
         lastChild.aliases.mkString("|"),
         s"$fullCommandName ${lastChild.aliases.head}",
