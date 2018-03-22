@@ -1,4 +1,5 @@
-package io.github.katrix.katlib.i18n
+package net.katsstuff.katlib.i18n
+
 import java.util.{Locale, ResourceBundle}
 
 import org.jetbrains.annotations.PropertyKey

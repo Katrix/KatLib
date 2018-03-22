@@ -1,4 +1,4 @@
-package io.github.katrix.katlib.helper
+package net.katsstuff.katlib.helper
 
 import java.net.{URI, URL}
 import java.util.UUID
@@ -8,15 +8,16 @@ import scala.reflect.ClassTag
 import scala.util.Try
 
 import org.spongepowered.api.data.DataSerializable
-import org.spongepowered.api.data.persistence.DataFormats
 import org.spongepowered.api.text.format.{TextColor, TextColors, TextFormat, TextStyle, TextStyles}
 import org.spongepowered.api.text.{LiteralText, Text, TextTemplate}
 import org.spongepowered.api.{CatalogType, Sponge}
 
 import io.circe._
 import io.circe.syntax._
-import io.github.katrix.katlib.helper.Implicits._
+import Implicits._
 import metaconfig._
+
+import net.katsstuff.katlib.KatLibDataFormats
 
 trait SpongeProtocol {
 
@@ -76,14 +77,14 @@ trait SpongeProtocol {
   implicit def dataSerializableDecoder[A <: DataSerializable](implicit classTag: ClassTag[A]): Decoder[A] =
     Decoder.instance { c =>
       Sponge.getDataManager
-        .deserialize(classTag.runtimeClass.asInstanceOf[Class[A]], DataFormats.JSON.read(c.value.noSpaces))
+        .deserialize(classTag.runtimeClass.asInstanceOf[Class[A]], KatLibDataFormats.readJson(c.value.noSpaces))
         .toOption
         .toRight(DecodingFailure(s"Invalid $classTag", c.history));
     }
 
   implicit def dataSerializableEncoder[A <: DataSerializable]: Encoder[A] =
     Encoder.instance { a =>
-      parser.parse(DataFormats.JSON.write(a.toContainer)).right.get
+      parser.parse(KatLibDataFormats.writeJson(a.toContainer)).right.get
     }
 
   implicit val textFormatConfDecoder: ConfDecoder[TextFormat] = ConfDecoder.instanceF { conf =>

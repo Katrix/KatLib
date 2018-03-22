@@ -18,24 +18,24 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package io.github.katrix.katlib
-
-import java.nio.file.Path
-
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
+package net.katsstuff.katlib.helper
 
 import org.slf4j.Logger
-import org.spongepowered.api.Sponge
-import org.spongepowered.api.plugin.{PluginContainer => SpongePluginContainer}
-import org.spongepowered.api.scheduler.SpongeExecutorService
 
-import io.github.katrix.katlib.helper.Implicits.PluginContainer
+import net.katsstuff.katlib.KatPlugin
 
-abstract class ImplKatPlugin(val logger: Logger, val configDir: Path, spongeContainer: SpongePluginContainer)
-    extends KatPlugin {
+object LogHelper {
 
-  val container: PluginContainer = spongeContainer
+  def logger(implicit plugin: KatPlugin): Logger = plugin.logger
 
-  lazy val syncExecutor:         SpongeExecutorService           = Sponge.getScheduler.createSyncExecutor(this)
-  lazy val syncExecutionContext: ExecutionContextExecutorService = ExecutionContext.fromExecutorService(syncExecutor)
+  def trace(any: Any)(implicit plugin: KatPlugin): Unit = logger.trace(String.valueOf(any))
+
+  def info(any: Any)(implicit plugin: KatPlugin): Unit = logger.info(String.valueOf(any))
+
+  def debug(any: Any)(implicit plugin: KatPlugin): Unit = logger.debug(String.valueOf(any))
+
+  def warn(any: Any)(implicit plugin: KatPlugin): Unit = logger.warn(String.valueOf(any))
+
+  def error(any: Any)(implicit plugin: KatPlugin):                  Unit = logger.error(String.valueOf(any))
+  def error(msg: String, e: Throwable)(implicit plugin: KatPlugin): Unit = logger.error(msg, e)
 }

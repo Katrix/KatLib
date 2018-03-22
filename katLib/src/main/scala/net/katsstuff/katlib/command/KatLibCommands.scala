@@ -1,15 +1,16 @@
-package io.github.katrix.katlib.command
+package net.katsstuff.katlib.command
 
 import org.spongepowered.api.command.CommandSource
 import org.spongepowered.api.service.pagination.PaginationList
 import org.spongepowered.api.text.Text
 import org.spongepowered.api.text.action.TextActions
 
-import io.github.katrix.katlib.KatPlugin
 import net.katsstuff.scammander.sponge._
-import io.github.katrix.katlib.helper.Implicits._
+import net.katsstuff.katlib.helper.Implicits._
 import org.spongepowered.api.text.format.TextColors._
 import org.spongepowered.api.text.format.TextStyles._
+
+import net.katsstuff.katlib.KatPlugin
 
 trait KatLibCommands extends SpongeBaseAll {
 

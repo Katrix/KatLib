@@ -1,12 +1,12 @@
-package io.github.katrix.katlib
+package net.katsstuff.katlib
 
 import org.spongepowered.api.command.CommandMapping
 import org.spongepowered.api.text.Text
 import org.spongepowered.api.text.format.TextColors
 
-import io.github.katrix.katlib.i18n.{KLResource, Localized}
 import net.katsstuff.scammander.sponge._
-import io.github.katrix.katlib.helper.Implicits._
+import net.katsstuff.katlib.helper.Implicits._
+import net.katsstuff.katlib.i18n.{KLResource, Localized}
 
 package object command {
 

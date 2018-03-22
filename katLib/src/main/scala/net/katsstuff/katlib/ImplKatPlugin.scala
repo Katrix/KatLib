@@ -18,26 +18,24 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package io.github.katrix.katlib
+package net.katsstuff.katlib
 
 import java.nio.file.Path
 
-import scala.concurrent.ExecutionContextExecutorService
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
 
 import org.slf4j.Logger
+import org.spongepowered.api.Sponge
+import org.spongepowered.api.plugin.{PluginContainer => SpongePluginContainer}
 import org.spongepowered.api.scheduler.SpongeExecutorService
 
-import io.github.katrix.katlib.helper.Implicits.PluginContainer
+import net.katsstuff.katlib.helper.Implicits.PluginContainer
 
-trait KatPlugin { self =>
+abstract class ImplKatPlugin(val logger: Logger, val configDir: Path, spongeContainer: SpongePluginContainer)
+    extends KatPlugin {
 
-  def logger: Logger
+  val container: PluginContainer = spongeContainer
 
-  def configDir: Path
-
-  def container: PluginContainer
-
-  def syncExecutor: SpongeExecutorService
-
-  def syncExecutionContext: ExecutionContextExecutorService
+  lazy val syncExecutor:         SpongeExecutorService           = Sponge.getScheduler.createSyncExecutor(this)
+  lazy val syncExecutionContext: ExecutionContextExecutorService = ExecutionContext.fromExecutorService(syncExecutor)
 }

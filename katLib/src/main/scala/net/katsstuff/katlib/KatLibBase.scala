@@ -1,6 +1,6 @@
-package io.github.katrix.katlib
+package net.katsstuff.katlib
 
-import io.github.katrix.katlib.helper.LogHelper
+import net.katsstuff.katlib.helper.LogHelper
 
 trait KatLibBase extends KatPlugin {
 
