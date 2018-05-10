@@ -4,13 +4,17 @@ import org.spongepowered.api.command.CommandMapping
 import org.spongepowered.api.text.Text
 import org.spongepowered.api.text.format.TextColors
 
-import net.katsstuff.scammander.sponge._
-import net.katsstuff.katlib.helper.Implicits._
 import net.katsstuff.katlib.i18n.{KLResource, Localized}
+import net.katsstuff.katlib.scsponge._
+import net.katsstuff.katlib.scsponge.text._
+import net.katsstuff.scammander.sponge.SpongeBase
 
 package object command {
 
-  def registerPluginCommand(childSet: Set[ChildCommand[_, _]])(implicit plugin: KatPlugin): Option[CommandMapping] =
+  def registerPluginCommand(
+      cake: SpongeBase
+  )(childSet: Set[cake.ChildCommand[_, _]])(implicit plugin: KatPlugin): Option[CommandMapping] = {
+    import cake._
     Command
       .withChildren[NotUsed](childSet) { (src, _, _) =>
         Localized(src) { implicit locale =>
@@ -39,7 +43,8 @@ package object command {
           Localized(src) { implicit locale =>
             KLResource.getText("cmd.plugin.description", "plugin" -> plugin.container.name)
           }
-        },
+        }
       )
+  }
 
 }

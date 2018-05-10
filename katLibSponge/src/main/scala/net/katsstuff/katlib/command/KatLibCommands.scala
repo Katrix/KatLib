@@ -5,16 +5,11 @@ import org.spongepowered.api.service.pagination.PaginationList
 import org.spongepowered.api.text.Text
 import org.spongepowered.api.text.action.TextActions
 
-import net.katsstuff.scammander.sponge._
 import net.katsstuff.katlib.helper.Implicits._
-import org.spongepowered.api.text.format.TextColors._
-import org.spongepowered.api.text.format.TextStyles._
-
-import net.katsstuff.katlib.KatPlugin
+import net.katsstuff.katlib.scsponge.text._
+import net.katsstuff.scammander.sponge._
 
 trait KatLibCommands extends SpongeBaseAll {
-
-  implicit def plugin: KatPlugin
 
   override type Title = Text
 
@@ -75,7 +70,7 @@ trait KatLibCommands extends SpongeBaseAll {
     val usage = command.getUsage(source)
 
     val helpBase =
-      t"$GREEN$UNDERLINE$commandName $usage".toBuilder.onClick(TextActions.suggestCommand(fullCommandName)).build()
+      t"$Green$Underlined$commandName $usage".toBuilder.onClick(TextActions.suggestCommand(fullCommandName)).build()
 
     val commandHelp        = command.getHelp(source).toOption
     val commandDescription = command.getShortDescription(source).toOption

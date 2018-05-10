@@ -16,7 +16,6 @@ import io.circe._
 import io.circe.syntax._
 import Implicits._
 import metaconfig._
-
 import net.katsstuff.katlib.KatLibDataFormats
 
 trait SpongeProtocol {

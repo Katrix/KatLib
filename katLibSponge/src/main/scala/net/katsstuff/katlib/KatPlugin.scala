@@ -22,20 +22,22 @@ package net.katsstuff.katlib
 
 import java.nio.file.Path
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
+import scala.concurrent.ExecutionContextExecutorService
 
 import org.slf4j.Logger
-import org.spongepowered.api.Sponge
-import org.spongepowered.api.plugin.{PluginContainer => SpongePluginContainer}
 import org.spongepowered.api.scheduler.SpongeExecutorService
 
-import net.katsstuff.katlib.helper.Implicits.PluginContainer
+import net.katsstuff.katlib.scsponge.PluginContainer
 
-abstract class ImplKatPlugin(val logger: Logger, val configDir: Path, spongeContainer: SpongePluginContainer)
-    extends KatPlugin {
+trait KatPlugin {
 
-  val container: PluginContainer = spongeContainer
+  def logger: Logger
 
-  lazy val syncExecutor:         SpongeExecutorService           = Sponge.getScheduler.createSyncExecutor(this)
-  lazy val syncExecutionContext: ExecutionContextExecutorService = ExecutionContext.fromExecutorService(syncExecutor)
+  def configDir: Path
+
+  def container: PluginContainer
+
+  def syncExecutor: SpongeExecutorService
+
+  def syncExecutionContext: ExecutionContextExecutorService
 }
