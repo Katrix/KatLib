@@ -78,7 +78,23 @@ lazy val katLibBukkit = project
     libraryDependencies += "org.spigotmc"           % "spigot-api"         % "1.12.2-R0.1-SNAPSHOT" % Provided,
     libraryDependencies += "com.comphenix.protocol" % "ProtocolLib-API"    % "4.4.0-SNAPSHOT" % Provided notTransitive (),
     libraryDependencies += "net.katsstuff"          %% "scammander-bukkit" % scammanderVersion,
-    libraryDependencies += "net.katsstuff"          %% "typenbt"           % "0.3"
+    libraryDependencies += "net.katsstuff"          %% "typenbt"           % "0.3",
+    assemblyShadeRules in assembly := Seq(
+      ShadeRule.rename("cats.**"                     -> "net.katsstuff.katlib.shade.cats.@1").inAll,
+      ShadeRule.rename("fansi.**"                    -> "net.katsstuff.katlib.shade.fansi.@1").inAll,
+      ShadeRule.rename("fastparse.**"                -> "net.katsstuff.katlib.shade.fastparse.@1").inAll,
+      ShadeRule.rename("io.circe.**"                 -> "net.katsstuff.katlib.shade.circe.@1").inAll,
+      ShadeRule.rename("jawn.**"                     -> "net.katsstuff.katlib.shade.jawn.@1").inAll,
+      ShadeRule.rename("machinist.**"                -> "net.katsstuff.katlib.shade.machinist.@1").inAll, //Zap?
+      ShadeRule.rename("org.typelevel.paiges.**"     -> "net.katsstuff.katlib.shade.paiges.@1").inAll,
+      ShadeRule.rename("pprint.**"                   -> "net.katsstuff.katlib.shade.pprint.@1").inAll,
+      ShadeRule.rename("scala.**"                    -> "net.katsstuff.katlib.shade.scala.@1").inAll,
+      ShadeRule.rename("shapeless.**"                -> "net.katsstuff.katlib.shade.shapeless.@1").inAll,
+      ShadeRule.rename("sourcecode.**"               -> "net.katsstuff.katlib.shade.sourcecode.@1").inAll,
+      ShadeRule.rename("net.katsstuff.katlib.**"     -> "net.katsstuff.katlib.shade.katlib.@1").inAll,
+      ShadeRule.rename("net.katsstuff.scammander.**" -> "net.katsstuff.katlib.shade.scammander.@1").inAll,
+      ShadeRule.zap("macrocompat.**").inAll,
+    ),
   )
   .dependsOn(katLibBase)
 
