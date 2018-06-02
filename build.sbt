@@ -1,6 +1,7 @@
 def removeSnapshot(str: String): String = if (str.endsWith("-SNAPSHOT")) str.substring(0, str.length - 9) else str
 
 lazy val circeVersion = "0.9.1"
+lazy val scammanderVersion = "0.5-SNAPSHOT"
 
 lazy val commonSettings = Seq(
   organization := "net.katsstuff",
@@ -21,6 +22,7 @@ lazy val commonSettings = Seq(
     "-Ywarn-nullary-override",
     "-Ywarn-nullary-unit",
     "-Ywarn-unused",
+    "-language:higherKinds"
   ),
   scalaVersion := "2.12.6",
   crossPaths := false,
@@ -33,11 +35,11 @@ lazy val katLibBase = project
     name := "katlib-base",
     libraryDependencies += "com.chuusai"   %% "shapeless"   % "2.3.3",
     libraryDependencies += "org.typelevel" %% "cats-core"   % "1.1.0",
-    libraryDependencies += "org.typelevel" %% "cats-effect" % "0.10",
+    libraryDependencies += "org.typelevel" %% "cats-effect" % "1.0.0-RC",
     libraryDependencies ++= Seq("io.circe" %% "circe-core", "io.circe" %% "circe-generic", "io.circe" %% "circe-parser")
       .map(_ % circeVersion),
-    libraryDependencies += "org.jetbrains" % "annotations" % "15.0" % Provided,
-    libraryDependencies += "net.katsstuff" %% "scammander" % "0.4"
+    libraryDependencies += "net.katsstuff" %% "scammander" % scammanderVersion,
+    libraryDependencies += "net.katsstuff" %% "minejson"   % "0.1"
   )
 
 lazy val katLibSponge = crossProject(SpongePlatform("5.1.0"), SpongePlatform("6.0.0"), SpongePlatform("7.0.0"))
@@ -46,7 +48,7 @@ lazy val katLibSponge = crossProject(SpongePlatform("5.1.0"), SpongePlatform("6.
     commonSettings,
     name := s"katlib-sponge${removeSnapshot(spongeApiVersion.value)}",
     resolvers += Resolver.sonatypeRepo("snapshots"),
-    libraryDependencies += "io.circe" %% "circe-config" % "0.4.1",
+    libraryDependencies += "io.circe"       %% "circe-config" % "0.4.1",
     libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
     //https://github.com/portable-scala/sbt-crossproject/issues/74
     Seq(Compile, Test).flatMap(inConfig(_) {
@@ -58,25 +60,27 @@ lazy val katLibSponge = crossProject(SpongePlatform("5.1.0"), SpongePlatform("6.
       }
     })
   )
-  .spongeSettings("5.1.0")(libraryDependencies += "net.katsstuff" %% "scammanderSponge_sponge5.1" % "0.3")
-  .spongeSettings("6.0.0")(libraryDependencies += "net.katsstuff" %% "scammanderSponge_sponge6.0" % "0.3")
-  .spongeSettings("7.0.0")(libraryDependencies += "net.katsstuff" %% "scammanderSponge_sponge7.0" % "0.3")
+  .configure(_.dependsOn(katLibBase))
+  .spongeSettings("5.1.0")(libraryDependencies += "net.katsstuff" %% "scammanderSponge_sponge5.1" % scammanderVersion)
+  .spongeSettings("6.0.0")(libraryDependencies += "net.katsstuff" %% "scammanderSponge_sponge6.0" % scammanderVersion)
+  .spongeSettings("7.0.0")(libraryDependencies += "net.katsstuff" %% "scammanderSponge_sponge7.0" % scammanderVersion)
 
-lazy val katLibBukkit = project.settings(
-  commonSettings,
-  name := "katlib-bukkit",
-  resolvers ++= Seq(
-    "spigotmc-snapshots" at "https://hub.spigotmc.org/nexus/content/repositories/snapshots",
-    Resolver.sonatypeRepo("snapshots"),
-    "dmulloy2-repo" at "http://repo.dmulloy2.net/nexus/repository/public/"
-  ),
-  libraryDependencies += "io.circe" %% "circe-yaml" % "0.8.0",
-  libraryDependencies += "org.spigotmc"           % "spigot-api"         % "1.12.2-R0.1-SNAPSHOT" % Provided,
-  libraryDependencies += "com.comphenix.protocol" % "ProtocolLib-API"    % "4.4.0-SNAPSHOT" % Provided notTransitive (),
-  libraryDependencies += "net.katsstuff"          %% "scammander-bukkit" % "0.4",
-  libraryDependencies += "net.katsstuff"          %% "typenbt"           % "0.3",
-  libraryDependencies += "net.katsstuff"          %% "minejson"          % "0.1"
-)
+lazy val katLibBukkit = project
+  .settings(
+    commonSettings,
+    name := "katlib-bukkit",
+    resolvers ++= Seq(
+      "spigotmc-snapshots" at "https://hub.spigotmc.org/nexus/content/repositories/snapshots",
+      Resolver.sonatypeRepo("snapshots"),
+      "dmulloy2-repo" at "http://repo.dmulloy2.net/nexus/repository/public/"
+    ),
+    libraryDependencies += "io.circe"               %% "circe-yaml"        % "0.8.0",
+    libraryDependencies += "org.spigotmc"           % "spigot-api"         % "1.12.2-R0.1-SNAPSHOT" % Provided,
+    libraryDependencies += "com.comphenix.protocol" % "ProtocolLib-API"    % "4.4.0-SNAPSHOT" % Provided notTransitive (),
+    libraryDependencies += "net.katsstuff"          %% "scammander-bukkit" % scammanderVersion,
+    libraryDependencies += "net.katsstuff"          %% "typenbt"           % "0.3"
+  )
+  .dependsOn(katLibBase)
 
 lazy val katLibSpongeV510 = katLibSponge.spongeProject("5.1.0")
 lazy val katLibSpongeV600 = katLibSponge.spongeProject("6.0.0")

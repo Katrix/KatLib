@@ -22,22 +22,38 @@ package net.katsstuff.katlib
 
 import java.nio.file.Path
 
-import scala.concurrent.ExecutionContextExecutorService
+import scala.concurrent.ExecutionContext
 
 import org.slf4j.Logger
-import org.spongepowered.api.scheduler.SpongeExecutorService
+import org.spongepowered.api.plugin.PluginContainer
 
-import net.katsstuff.katlib.scsponge.PluginContainer
-
+/**
+  * Base class for a Sponge kat plugin.
+  */
 trait KatPlugin {
 
+  /**
+    * The base SLF4J logger.
+    */
   def logger: Logger
 
+  /**
+    * The place where configs and stuff is stored.
+    */
   def configDir: Path
 
+  /**
+    * Our container instance.
+    */
   def container: PluginContainer
 
-  def syncExecutor: SpongeExecutorService
+  /**
+    * An execution context for performing stuff on the main game thread.
+    */
+  def syncExecutionContext: ExecutionContext
 
-  def syncExecutionContext: ExecutionContextExecutorService
+  /**
+    * An execution context for performing stuff away from the main game thread.
+    */
+  def asyncExecutionContext: ExecutionContext
 }

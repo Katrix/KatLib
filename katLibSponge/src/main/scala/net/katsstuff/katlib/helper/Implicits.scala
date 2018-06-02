@@ -35,7 +35,7 @@ import com.google.common.reflect.TypeToken
 
 object Implicits extends SpongeProtocol {
 
-  implicit class RichOptional[A](val optional: Optional[A]) extends AnyVal {
+  implicit class RichOptional[A](private val optional: Optional[A]) extends AnyVal {
 
     def toOption: Option[A] =
       if (optional.isPresent) {
@@ -45,7 +45,7 @@ object Implicits extends SpongeProtocol {
       }
   }
 
-  implicit class RichOption[A](val option: Option[A]) extends AnyVal {
+  implicit class RichOption[A](private val option: Option[A]) extends AnyVal {
 
     def toOptional: Optional[A] =
       option match {
@@ -56,7 +56,7 @@ object Implicits extends SpongeProtocol {
 
   implicit def typeToken[A]: TypeToken[A] = macro MacroImpl.typeToken[A]
 
-  implicit class RichDataManager(val dataManager: DataManager) extends AnyVal {
+  implicit class RichDataManager(private val dataManager: DataManager) extends AnyVal {
 
     def registerBuilder[A <: DataSerializable: ClassTag](builder: DataBuilder[A]): Unit =
       dataManager.registerBuilder(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]], builder)
@@ -82,7 +82,7 @@ object Implicits extends SpongeProtocol {
       dataManager.getImmutableBuilder(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
   }
 
-  implicit class RichServiceManager(val serviceManager: ServiceManager) extends AnyVal {
+  implicit class RichServiceManager(private val serviceManager: ServiceManager) extends AnyVal {
 
     def provide[A: ClassTag]: Option[A] =
       serviceManager.provide(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]).toOption
