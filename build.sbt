@@ -1,7 +1,7 @@
 def removeSnapshot(str: String): String = if (str.endsWith("-SNAPSHOT")) str.substring(0, str.length - 9) else str
 
 lazy val circeVersion = "0.9.1"
-lazy val scammanderVersion = "0.5-SNAPSHOT"
+lazy val scammanderVersion = "0.5"
 
 lazy val commonSettings = Seq(
   organization := "net.katsstuff",
