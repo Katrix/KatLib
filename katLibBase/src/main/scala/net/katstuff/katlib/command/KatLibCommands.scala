@@ -2,22 +2,21 @@ package net.katstuff.katlib.command
 
 import scala.language.implicitConversions
 
-import cats.FlatMap
 import cats.kernel.Monoid
-import cats.~>
 import cats.syntax.all._
-import net.katsstuff.minejson.text.Text
-import net.katsstuff.scammander.{ComplexBaseStaticChildCommand, HelpCommands, ScammanderBaseAll}
-import net.katstuff.katlib.algebras.{Localized, Pagination}
-import net.katsstuff.minejson.text._
+import cats.{FlatMap, ~>}
+import net.katsstuff.minejson.text.{Text, _}
 import net.katsstuff.scammander
+import net.katsstuff.scammander.{HelpCommands, ScammanderBaseAll}
+import net.katstuff.katlib.algebras.{Localized, Pagination}
 
-abstract class KatLibCommands[F[_]: FlatMap, G[_], Page: Monoid, CommandSource, RunExtra, TabExtra, Player, User](
+abstract class KatLibCommands[F[_]: FlatMap, G[_], Page: Monoid, CommandSource, Player, User](
     val pagination: Pagination.Aux[F, CommandSource, Page],
     val FtoG: F ~> G,
     val localized: Localized[F, CommandSource]
-) extends ScammanderBaseAll[G, CommandSource, RunExtra, TabExtra]
-    with HelpCommands[G, CommandSource, RunExtra, TabExtra] {
+) extends ScammanderBaseAll[G] with HelpCommands[G] {
+
+  override type RootSender = CommandSource
 
   /**
     * Helper for creating an alias when registering a command.
@@ -189,15 +188,8 @@ abstract class KatLibCommands[F[_]: FlatMap, G[_], Page: Monoid, CommandSource, 
     } yield res
 }
 
-trait CommandSyntax[G[_], RootSender, RunExtra, TabExtra, Result, StaticChildCommand <: ComplexBaseStaticChildCommand[
-  G,
-  RootSender,
-  RunExtra,
-  TabExtra,
-  Result,
-  StaticChildCommand
-]] {
-  type ChildCommand = scammander.ComplexChildCommand[G, RootSender, RunExtra, TabExtra, Result, StaticChildCommand]
+trait CommandSyntax[G[_], RootSender, RunExtra, TabExtra, Result, StaticChildCommand] {
+  type ChildCommand = scammander.ComplexChildCommand[G, StaticChildCommand]
 
   def toChild(
       aliases: Set[String],

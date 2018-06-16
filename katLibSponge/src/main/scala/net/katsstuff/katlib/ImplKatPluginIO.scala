@@ -22,14 +22,13 @@ package net.katsstuff.katlib
 
 import java.nio.file.Path
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
+import scala.concurrent.ExecutionContext
 
 import org.slf4j.Logger
 import org.spongepowered.api.Sponge
 import org.spongepowered.api.command.CommandSource
 import org.spongepowered.api.entity.living.player.{Player, User}
 import org.spongepowered.api.plugin.PluginContainer
-import org.spongepowered.api.scheduler.SpongeExecutorService
 
 import cats.effect.IO
 import net.katsstuff.katlib.algebras.TextConversion

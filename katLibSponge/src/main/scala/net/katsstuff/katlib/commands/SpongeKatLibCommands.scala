@@ -26,11 +26,7 @@ abstract class SpongeKatLibCommands[F[_]: FlatMap, G[_], Page: Monoid](
     localized: Localized[F, CommandSource],
     T: TextConversion[G]
 )(implicit val F: MonadError[G, NonEmptyList[CommandFailure]])
-    extends KatLibCommands[F, G, Page, CommandSource, Unit, Option[Location[World]], Player, User](
-      pagination,
-      FtoG,
-      localized
-    )
+    extends KatLibCommands[F, G, Page, CommandSource, Player, User](pagination, FtoG, localized)
     with SpongeBase[G]
     with SpongeValidators[G]
     with SpongeParameter[G]

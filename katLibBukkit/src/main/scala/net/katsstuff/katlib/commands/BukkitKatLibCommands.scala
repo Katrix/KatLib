@@ -21,7 +21,7 @@ abstract class BukkitKatLibCommands[F[_]: FlatMap, G[_], Page: Monoid](
     pagination: Pagination.Aux[F, CommandSender, Page],
     FtoG: F ~> G,
     localized: Localized[F, CommandSender]
-) extends KatLibCommands[F, G, Page, CommandSender, BukkitExtra, BukkitExtra, Player, OfflinePlayer](
+) extends KatLibCommands[F, G, Page, CommandSender, Player, OfflinePlayer](
       pagination,
       FtoG,
       localized

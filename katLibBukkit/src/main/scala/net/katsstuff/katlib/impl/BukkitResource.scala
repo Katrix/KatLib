@@ -39,7 +39,8 @@ class BukkitResource[F[_]: Monad](location: String) extends Resource[F] {
     if (params.forall(t => t._2.isInstanceOf[String]))
       Text(format(params.asInstanceOf[Map[String, String]])(str))
     else {
-      val args: Seq[AnyRef] = findArgs.findAllIn(str).toSeq.map(s => params.getOrElse(s, s: AnyRef))
+      val args: Seq[AnyRef] =
+        findArgs.findAllIn(str).toSeq.map(s => params.mapValues(_.asInstanceOf[AnyRef]).getOrElse(s, s: AnyRef))
       val nonArgs: Seq[String] = findArgs.split(str).toSeq.padTo(args.length, "")
 
       val objs = nonArgs.zip(args).flatMap {
