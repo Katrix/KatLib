@@ -4,17 +4,18 @@ import scala.language.implicitConversions
 
 import cats.kernel.Monoid
 import cats.syntax.all._
-import cats.{FlatMap, ~>}
+import cats.{~>, FlatMap}
 import net.katsstuff.minejson.text.{Text, _}
 import net.katsstuff.scammander
 import net.katsstuff.scammander.{HelpCommands, ScammanderBaseAll}
 import net.katstuff.katlib.algebras.{Localized, Pagination}
 
-abstract class KatLibCommands[F[_]: FlatMap, G[_], Page: Monoid, CommandSource, Player, User](
+abstract class KatLibCommands[F[_]: FlatMap, G[_], Page: Monoid, CommandSource, Player, User](val FtoG: F ~> G)(
+    implicit
     val pagination: Pagination.Aux[F, CommandSource, Page],
-    val FtoG: F ~> G,
-    val localized: Localized[F, CommandSource]
-) extends ScammanderBaseAll[G] with HelpCommands[G] {
+    val LocalizedF: Localized[F, CommandSource]
+) extends ScammanderBaseAll[G]
+    with HelpCommands[G] {
 
   override type RootSender = CommandSource
 

@@ -41,15 +41,18 @@ abstract class ImplKatPluginIO(val logger: Logger, val configDir: Path, spongeCo
 
   implicit val plugin: KatPlugin = this
 
-  implicit val T:             TextConversion[IO]                     = new SpongeTextConversion[IO]
-  implicit val C:             Cache[IO]                              = new SpongeCache[IO]
-  implicit val CS:            CommandSourceAccess[IO, CommandSource] = new SpongeCommandSourceOps[IO]
-  implicit val FA:            FileAccess[IO]                         = new FileAccessImpl[IO]
-  implicit val ExtractLocale: Localized[IO, CommandSource]           = new LocalizedImpl[IO, CommandSource]
-  implicit val Log:           LogHelper[IO]                          = new SpongeLogHelper[IO]
-  implicit val Page:          Pagination[IO, CommandSource]          = new SpongePagination[IO]
-  implicit val P:             PlayerAccess[IO, Player, User]         = new SpongePlayerAccess[IO]
-  implicit val G:             PluginGlobal[IO]                    = new SpongePluginGlobalIO
+  implicit val text:           TextConversion[IO]                    = new SpongeTextConversion[IO]
+  implicit val cache:          Cache[IO]                             = new SpongeCache[IO]
+  implicit val commandSources: CommandSources[IO, CommandSource]     = new SpongeCommandSourcesClass[IO]
+  implicit val files:          FileAccess[IO]                        = new FileAccessImpl[IO]
+  implicit val Localized:      Localized[IO, CommandSource]          = new LocalizedImpl[IO, CommandSource]
+  implicit val log:            LogHelper[IO]                         = new SpongeLogHelper[IO]
+  implicit val pagination:     Pagination[IO, CommandSource]         = new SpongePagination[IO]
+  implicit val players:        Players[IO, Player]                   = new SpongePlayers[IO]
+  implicit val users:          Users[IO, User, Player]               = new SpongeUsersClass[IO]
+  implicit val userAccess:     UserAccess[IO, User]                  = new SpongeUserAccess[IO]
+  implicit val locations:      Locations[IO, SpongeLocation, Player] = new SpongeLocations[IO]
+  implicit val global:         PluginGlobal[IO]                      = new SpongePluginGlobalIO
 
   val container: PluginContainer = spongeContainer
 

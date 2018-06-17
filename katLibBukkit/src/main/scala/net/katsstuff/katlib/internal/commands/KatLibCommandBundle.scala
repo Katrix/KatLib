@@ -17,16 +17,16 @@ import net.katsstuff.katlib.internal.util.Zipper
 import net.katsstuff.minejson.text._
 import net.katsstuff.scammander.CommandFailure
 import net.katsstuff.scammander.bukkit.components.BukkitExtra
-import net.katstuff.katlib.algebras.{Cache, CommandSourceAccess, Localized, Pagination}
+import net.katstuff.katlib.algebras.{Cache, CommandSources, Localized, Pagination}
 
 abstract class KatLibCommandBundle[F[_]: Sync, G[_], Page: Monoid](FtoG: F ~> G)(
     implicit
     pagination: Pagination.Aux[F, CommandSender, Page],
     localized: Localized[F, CommandSender],
     C: Cache[F],
-    CS: CommandSourceAccess[F, CommandSender],
+    CS: CommandSources[F, CommandSender],
     override val F: MonadError[G, NonEmptyList[CommandFailure]],
-) extends BukkitKatLibCommands[F, G, Page](pagination, FtoG, localized) {
+) extends BukkitKatLibCommands[F, G, Page](FtoG) {
 
   object PageCmd extends Command[CommandSender, PageArgs] {
 

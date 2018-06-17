@@ -3,7 +3,7 @@ package net.katsstuff.katlib
 import java.io.{File, InputStream, Reader}
 import java.util.logging.{Level, Logger}
 
-import org.bukkit.{OfflinePlayer, Server}
+import org.bukkit.{Location, OfflinePlayer, Server}
 import org.bukkit.command.CommandSender
 import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.entity.Player
@@ -26,14 +26,17 @@ class ScalaPluginIO extends JavaPlugin {
 
   implicit val plugin: ScalaPluginIO = this
 
-  implicit val C:    Cache[IO]                                        = new BukkitCache[IO]
-  implicit val CS:   CommandSourceAccess[IO, CommandSender]           = new BukkitCommandSourceOps[IO]
-  implicit val FA:   FileAccess[IO]                                   = new FileAccessImpl[IO]
-  implicit val L:    Localized[IO, CommandSender]                     = new LocalizedImpl[IO, CommandSender]
-  implicit val Log:  LogHelper[IO]                                    = new BukkitLogHelper[IO]
-  implicit val Page: Pagination.Aux[IO, CommandSender, List[PageOps]] = new BukkitPagination[IO](KatLib.newPages)
-  implicit val P:    PlayerAccess[IO, Player, OfflinePlayer]          = new BukkitPlayerAccess[IO]
-  implicit val G:    PluginGlobal[IO]                                 = new BukkitPluginGlobalIO
+  implicit val cache:          Cache[IO]                                        = new BukkitCache[IO]
+  implicit val commandSources: CommandSources[IO, CommandSender]                = new BukkitCommandSourcesClass[IO]
+  implicit val files:          FileAccess[IO]                                   = new FileAccessImpl[IO]
+  implicit val Localized:      Localized[IO, CommandSender]                     = new LocalizedImpl[IO, CommandSender]
+  implicit val log:            LogHelper[IO]                                    = new BukkitLogHelper[IO]
+  implicit val pagination:     Pagination.Aux[IO, CommandSender, List[PageOps]] = new BukkitPagination[IO](KatLib.newPages)
+  implicit val players:        Players[IO, Player]                              = new BukkitPlayers[IO]
+  implicit val users:          Users[IO, OfflinePlayer, Player]                 = new BukkitUsersClass[IO]
+  implicit val userAccess:     UserAccess[IO, OfflinePlayer]                    = new BukkitUserAccess[IO]
+  implicit val locations:      Locations[IO, Location, Player]                  = new BukkitLocations[IO]
+  implicit val global:         PluginGlobal[IO]                                 = new BukkitPluginGlobalIO
 
   def dataFolder:                                  File                  = getDataFolder
   def pluginLoader:                                PluginLoader          = getPluginLoader

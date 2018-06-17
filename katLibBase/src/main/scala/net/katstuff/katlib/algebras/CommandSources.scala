@@ -7,7 +7,7 @@ import net.katsstuff.minejson.text.Text
 /**
   * Provides access to some properties and actions to execute on a command source.
   */
-trait CommandSourceAccess[F[_], CommandSource] {
+trait CommandSources[F[_], CommandSource] {
 
   /**
     * Returns the name of a command source.

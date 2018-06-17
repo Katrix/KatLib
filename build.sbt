@@ -1,6 +1,6 @@
 def removeSnapshot(str: String): String = if (str.endsWith("-SNAPSHOT")) str.substring(0, str.length - 9) else str
 
-lazy val circeVersion = "0.9.1"
+lazy val circeVersion      = "0.9.1"
 lazy val scammanderVersion = "0.5"
 
 lazy val commonSettings = Seq(
@@ -35,7 +35,7 @@ lazy val katLibBase = project
     name := "katlib-base",
     libraryDependencies += "com.chuusai"   %% "shapeless"   % "2.3.3",
     libraryDependencies += "org.typelevel" %% "cats-core"   % "1.1.0",
-    libraryDependencies += "org.typelevel" %% "cats-effect" % "1.0.0-RC",
+    libraryDependencies += "org.typelevel" %% "cats-effect" % "1.0.0-RC2",
     libraryDependencies ++= Seq("io.circe" %% "circe-core", "io.circe" %% "circe-generic", "io.circe" %% "circe-parser")
       .map(_ % circeVersion),
     libraryDependencies += "net.katsstuff" %% "scammander" % scammanderVersion,
@@ -72,11 +72,13 @@ lazy val katLibBukkit = project
     resolvers ++= Seq(
       "spigotmc-snapshots" at "https://hub.spigotmc.org/nexus/content/repositories/snapshots",
       Resolver.sonatypeRepo("snapshots"),
-      "dmulloy2-repo" at "http://repo.dmulloy2.net/nexus/repository/public/"
+      "dmulloy2-repo" at "http://repo.dmulloy2.net/nexus/repository/public/",
+      "vault-repo" at "http://nexus.hc.to/content/repositories/pub_releases"
     ),
     libraryDependencies += "io.circe"               %% "circe-yaml"        % "0.8.0",
     libraryDependencies += "org.spigotmc"           % "spigot-api"         % "1.12.2-R0.1-SNAPSHOT" % Provided,
     libraryDependencies += "com.comphenix.protocol" % "ProtocolLib-API"    % "4.4.0-SNAPSHOT" % Provided notTransitive (),
+    libraryDependencies += "net.milkbowl.vault"     % "VaultAPI"           % "1.6" % Provided,
     libraryDependencies += "net.katsstuff"          %% "scammander-bukkit" % scammanderVersion,
     libraryDependencies += "net.katsstuff"          %% "typenbt"           % "0.3",
     assemblyShadeRules in assembly := Seq(

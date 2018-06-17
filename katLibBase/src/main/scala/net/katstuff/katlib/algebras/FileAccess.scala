@@ -19,4 +19,11 @@ trait FileAccess[F[_]] {
     * @param content What to write to the file.
     */
   def saveFile(file: Path, content: String): F[Unit]
+
+  /**
+    * Checks if a given file or folder exists.
+    * @param file The location to check
+    * @return If the location exists
+    */
+  def exist(file: Path): F[Boolean]
 }

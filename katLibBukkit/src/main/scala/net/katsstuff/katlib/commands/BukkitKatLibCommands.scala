@@ -17,15 +17,10 @@ import net.katsstuff.scammander.bukkit.components.{BukkitBaseAll, BukkitCommandW
 import net.katstuff.katlib.algebras.{Localized, Pagination}
 import net.katstuff.katlib.command.{CommandSyntax, KatLibCommands}
 
-abstract class BukkitKatLibCommands[F[_]: FlatMap, G[_], Page: Monoid](
-    pagination: Pagination.Aux[F, CommandSender, Page],
-    FtoG: F ~> G,
+abstract class BukkitKatLibCommands[F[_]: FlatMap, G[_], Page: Monoid](FtoG: F ~> G)(
+    implicit pagination: Pagination.Aux[F, CommandSender, Page],
     localized: Localized[F, CommandSender]
-) extends KatLibCommands[F, G, Page, CommandSender, Player, OfflinePlayer](
-      pagination,
-      FtoG,
-      localized
-    )
+) extends KatLibCommands[F, G, Page, CommandSender, Player, OfflinePlayer](FtoG)
     with BukkitBaseAll[G] {
 
   override def testPermission(command: ChildCommandExtra[G], source: CommandSender): G[Boolean] =

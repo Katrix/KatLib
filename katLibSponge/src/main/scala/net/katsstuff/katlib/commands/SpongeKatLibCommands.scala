@@ -20,13 +20,12 @@ import net.katsstuff.scammander.{CommandFailure, ComplexChildCommand, ComplexCom
 import net.katstuff.katlib.algebras.{Localized, Pagination}
 import net.katstuff.katlib.command.{CommandSyntax, KatLibCommands}
 
-abstract class SpongeKatLibCommands[F[_]: FlatMap, G[_], Page: Monoid](
-    pagination: Pagination.Aux[F, CommandSource, Page],
-    FtoG: F ~> G,
+abstract class SpongeKatLibCommands[F[_]: FlatMap, G[_], Page: Monoid](FtoG: F ~> G)(
+    implicit pagination: Pagination.Aux[F, CommandSource, Page],
     localized: Localized[F, CommandSource],
-    T: TextConversion[G]
-)(implicit val F: MonadError[G, NonEmptyList[CommandFailure]])
-    extends KatLibCommands[F, G, Page, CommandSource, Player, User](pagination, FtoG, localized)
+    T: TextConversion[G],
+    F: MonadError[G, NonEmptyList[CommandFailure]]
+) extends KatLibCommands[F, G, Page, CommandSource, Player, User](FtoG)
     with SpongeBase[G]
     with SpongeValidators[G]
     with SpongeParameter[G]
