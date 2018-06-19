@@ -17,22 +17,22 @@ import net.katsstuff.scammander.bukkit.components.{BukkitBaseAll, BukkitCommandW
 import net.katstuff.katlib.algebras.{Localized, Pagination}
 import net.katstuff.katlib.command.{CommandSyntax, KatLibCommands}
 
-abstract class BukkitKatLibCommands[F[_]: FlatMap, G[_], Page: Monoid](FtoG: F ~> G)(
-    implicit pagination: Pagination.Aux[F, CommandSender, Page],
-    localized: Localized[F, CommandSender]
-) extends KatLibCommands[F, G, Page, CommandSender, Player, OfflinePlayer](FtoG)
-    with BukkitBaseAll[G] {
+abstract class BukkitKatLibCommands[G[_]: FlatMap, F[_], Page: Monoid](FtoG: G ~> F)(
+    implicit pagination: Pagination.Aux[G, CommandSender, Page],
+    localized: Localized[G, CommandSender]
+) extends KatLibCommands[G, F, Page, CommandSender, Player, OfflinePlayer](FtoG)
+    with BukkitBaseAll[F] {
 
-  override def testPermission(command: ChildCommandExtra[G], source: CommandSender): G[Boolean] =
+  override def testPermission(command: ChildCommandExtra[F], source: CommandSender): F[Boolean] =
     command.permission.forall(source.hasPermission).pure
 
-  override def commandUsage(command: ChildCommandExtra[G], source: CommandSender): G[Text] =
+  override def commandUsage(command: ChildCommandExtra[F], source: CommandSender): F[Text] =
     command.command.usage(source).map(Text.apply)
 
-  override def commandHelp(command: ChildCommandExtra[G], source: CommandSender): G[Option[Text]] =
+  override def commandHelp(command: ChildCommandExtra[F], source: CommandSender): F[Option[Text]] =
     command.help(source).map(Text.apply(_): Text).pure
 
-  override def commandDescription(command: ChildCommandExtra[G], source: CommandSender): G[Option[Text]] =
+  override def commandDescription(command: ChildCommandExtra[F], source: CommandSender): F[Option[Text]] =
     command.description(source).map(Text.apply(_): Text).pure
 
   override implicit val userParam:       Parameter[Set[OfflinePlayer]] = offlinePlayerParam
@@ -41,8 +41,8 @@ abstract class BukkitKatLibCommands[F[_]: FlatMap, G[_], Page: Monoid](FtoG: F ~
 
   override implicit def commandOps(
       command: ComplexCommand
-  ): CommandSyntax[G, CommandSender, BukkitExtra, BukkitExtra, Boolean, ChildCommandExtra[G]] =
-    new BukkitCommandSyntax[G](command, FunctionK.lift(runComputation))
+  ): CommandSyntax[F, CommandSender, BukkitExtra, BukkitExtra, Boolean, ChildCommandExtra[F]] =
+    new BukkitCommandSyntax[F](command, FunctionK.lift(runComputation))
 }
 
 class BukkitCommandSyntax[G[_]](

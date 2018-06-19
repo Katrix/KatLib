@@ -19,14 +19,14 @@ import net.katsstuff.scammander.CommandFailure
 import net.katsstuff.scammander.bukkit.components.BukkitExtra
 import net.katstuff.katlib.algebras.{Cache, CommandSources, Localized, Pagination}
 
-abstract class KatLibCommandBundle[F[_]: Sync, G[_], Page: Monoid](FtoG: F ~> G)(
+abstract class KatLibCommandBundle[G[_]: Sync, F[_], Page: Monoid](FtoG: G ~> F)(
     implicit
-    pagination: Pagination.Aux[F, CommandSender, Page],
-    localized: Localized[F, CommandSender],
-    C: Cache[F],
-    CS: CommandSources[F, CommandSender],
-    override val F: MonadError[G, NonEmptyList[CommandFailure]],
-) extends BukkitKatLibCommands[F, G, Page](FtoG) {
+    pagination: Pagination.Aux[G, CommandSender, Page],
+    localized: Localized[G, CommandSender],
+    C: Cache[G],
+    CS: CommandSources[G, CommandSender],
+    override val F: MonadError[F, NonEmptyList[CommandFailure]],
+) extends BukkitKatLibCommands[G, F, Page](FtoG) {
 
   object PageCmd extends Command[CommandSender, PageArgs] {
 
@@ -36,7 +36,7 @@ abstract class KatLibCommandBundle[F[_]: Sync, G[_], Page: Monoid](FtoG: F ~> G)
 
     private val focusedPages = new mutable.WeakHashMap[CommandSender, UUID]
 
-    override def run(sender: CommandSender, extra: BukkitExtra, arg: PageArgs): G[CommandSuccess] = {
+    override def run(sender: CommandSender, extra: BukkitExtra, arg: PageArgs): F[CommandSuccess] = {
 
       val uuidG = arg.uuid.toF("No active page")
 
@@ -70,14 +70,14 @@ abstract class KatLibCommandBundle[F[_]: Sync, G[_], Page: Monoid](FtoG: F ~> G)
       pageData.flatMap(page => FtoG(CS.sendMessage(sender, page))).as(Command.success())
     }
 
-    def currentPage(sender: CommandSender, uuid: UUID): F[Option[Text]] =
+    def currentPage(sender: CommandSender, uuid: UUID): G[Option[Text]] =
       C.get(allPages(sender))(uuid).map(opt => opt.map(_.focus))
 
     private def getPage(
         sender: CommandSender,
         uuid: UUID,
         action: Zipper[Text] => Option[Zipper[Text]]
-    ): F[Option[Text]] = {
+    ): G[Option[Text]] = {
       import cats.instances.option._
 
       C.get(allPages(sender))(uuid).flatMap { optZipper =>
@@ -86,7 +86,7 @@ abstract class KatLibCommandBundle[F[_]: Sync, G[_], Page: Monoid](FtoG: F ~> G)
           next   <- action(zipper)
         } yield {
           val setAllPages     = C.put(allPages(sender))(uuid, next)
-          val setFocusedPages = Sync[F].delay(focusedPages.put(sender, uuid))
+          val setFocusedPages = Sync[G].delay(focusedPages.put(sender, uuid))
 
           setAllPages *> setFocusedPages.as(next.focus)
         }
@@ -95,11 +95,11 @@ abstract class KatLibCommandBundle[F[_]: Sync, G[_], Page: Monoid](FtoG: F ~> G)
       }
     }
 
-    def nextPage(sender: CommandSender, uuid: UUID):         F[Option[Text]] = getPage(sender, uuid, _.right)
-    def prevPage(sender: CommandSender, uuid: UUID):         F[Option[Text]] = getPage(sender, uuid, _.left)
-    def gotoPage(sender: CommandSender, uuid: UUID, i: Int): F[Option[Text]] = getPage(sender, uuid, _.goto(i))
+    def nextPage(sender: CommandSender, uuid: UUID):         G[Option[Text]] = getPage(sender, uuid, _.right)
+    def prevPage(sender: CommandSender, uuid: UUID):         G[Option[Text]] = getPage(sender, uuid, _.left)
+    def gotoPage(sender: CommandSender, uuid: UUID, i: Int): G[Option[Text]] = getPage(sender, uuid, _.goto(i))
 
-    def newPages(sender: CommandSender, pages: UUID => Seq[Text]): F[Text] = {
+    def newPages(sender: CommandSender, pages: UUID => Seq[Text]): G[Text] = {
       val uuid         = UUID.randomUUID()
       val createdPages = pages(uuid)
       val zipper       = Zipper(Nil, createdPages.head, createdPages.tail)
@@ -107,8 +107,8 @@ abstract class KatLibCommandBundle[F[_]: Sync, G[_], Page: Monoid](FtoG: F ~> G)
       val senderPages = allPages(sender)
 
       val setSenderPages  = C.put(senderPages)(uuid, zipper)
-      val setFocusedPages = Sync[F].delay(focusedPages.put(sender, uuid))
-      val setAllPages     = Sync[F].delay(allPages.put(sender, senderPages))
+      val setFocusedPages = Sync[G].delay(focusedPages.put(sender, uuid))
+      val setAllPages     = Sync[G].delay(allPages.put(sender, senderPages))
 
       setSenderPages *> setFocusedPages *> setAllPages.as(createdPages.head)
     }
@@ -134,16 +134,16 @@ abstract class KatLibCommandBundle[F[_]: Sync, G[_], Page: Monoid](FtoG: F ~> G)
 
   object CallbackCmd extends Command[CommandSender, String] {
 
-    private val callbacks = C.createExpireAfterWrite[String, CommandSender => F[Unit]](5.minutes)
+    private val callbacks = C.createExpireAfterWrite[String, CommandSender => G[Unit]](5.minutes)
 
-    override def run(source: CommandSender, extra: BukkitExtra, arg: String): G[CommandSuccess] =
+    override def run(source: CommandSender, extra: BukkitExtra, arg: String): F[CommandSuccess] =
       for {
         optCallback <- FtoG(C.get(callbacks)(arg))
         callback    <- optCallback.toF("No callback found")
         _           <- FtoG(callback(source))
       } yield Command.success()
 
-    def createCallback(callback: CommandSender => F[Unit]): F[String] = {
+    def createCallback(callback: CommandSender => G[Unit]): G[String] = {
       val uuid = UUID.randomUUID().toString
       C.put(callbacks)(uuid, callback).as(uuid)
     }

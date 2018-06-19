@@ -1,21 +1,25 @@
 package net.katstuff.katlib.command
 
+import java.util.Locale
+
 import scala.language.implicitConversions
 
 import cats.kernel.Monoid
 import cats.syntax.all._
-import cats.{~>, FlatMap}
+import cats.{FlatMap, ~>}
 import net.katsstuff.minejson.text.{Text, _}
 import net.katsstuff.scammander
 import net.katsstuff.scammander.{HelpCommands, ScammanderBaseAll}
 import net.katstuff.katlib.algebras.{Localized, Pagination}
 
-abstract class KatLibCommands[F[_]: FlatMap, G[_], Page: Monoid, CommandSource, Player, User](val FtoG: F ~> G)(
+abstract class KatLibCommands[G[_]: FlatMap, F[_], Page: Monoid, CommandSource, Player, User](val GtoF: G ~> F)(
     implicit
-    val pagination: Pagination.Aux[F, CommandSource, Page],
-    val LocalizedF: Localized[F, CommandSource]
-) extends ScammanderBaseAll[G]
-    with HelpCommands[G] {
+    val pagination: Pagination.Aux[G, CommandSource, Page],
+    val LocalizedG: Localized[G, CommandSource]
+) extends ScammanderBaseAll[F]
+    with HelpCommands[F] {
+
+  def GtoFLocalized[A](src: CommandSuccess)(f: Locale => G[A]): F[A] = GtoF(LocalizedG(src)(f))
 
   override type RootSender = CommandSource
 
@@ -62,7 +66,7 @@ abstract class KatLibCommands[F[_]: FlatMap, G[_], Page: Monoid, CommandSource, 
 
   implicit def commandOps(
       command: ComplexCommand
-  ): CommandSyntax[G, CommandSource, RunExtra, TabExtra, Result, StaticChildCommand]
+  ): CommandSyntax[F, CommandSource, RunExtra, TabExtra, Result, StaticChildCommand]
 
   private val pageOps = pagination.pageOperations
 
@@ -72,19 +76,19 @@ abstract class KatLibCommands[F[_]: FlatMap, G[_], Page: Monoid, CommandSource, 
   private val Line   = "│"
   private val End    = "└─"
 
-  def testPermission(command: StaticChildCommand, source: CommandSource): G[Boolean]
+  def testPermission(command: StaticChildCommand, source: CommandSource): F[Boolean]
 
-  def commandUsage(command: StaticChildCommand, source: CommandSource): G[Text]
+  def commandUsage(command: StaticChildCommand, source: CommandSource): F[Text]
 
-  def commandHelp(command: StaticChildCommand, source: CommandSource): G[Option[Text]]
+  def commandHelp(command: StaticChildCommand, source: CommandSource): F[Option[Text]]
 
-  def commandDescription(command: StaticChildCommand, source: CommandSource): G[Option[Text]]
+  def commandDescription(command: StaticChildCommand, source: CommandSource): F[Option[Text]]
 
   override def sendMultipleCommandHelp(
       title: Text,
       source: CommandSource,
       commands: Set[ChildCommand]
-  ): G[CommandSuccess] = {
+  ): F[CommandSuccess] = {
     import cats.instances.list._
 
     for {
@@ -99,7 +103,7 @@ abstract class KatLibCommands[F[_]: FlatMap, G[_], Page: Monoid, CommandSource, 
         )
       }
       helpPage = pageOps.setTitle(title) |+| pageOps.setContent(helpTexts)
-      _ <- FtoG(pagination.sendPage(helpPage, source))
+      _ <- GtoF(pagination.sendPage(helpPage, source))
     } yield Command.success()
   }
 
@@ -108,12 +112,12 @@ abstract class KatLibCommands[F[_]: FlatMap, G[_], Page: Monoid, CommandSource, 
       source: CommandSource,
       command: StaticChildCommand,
       path: List[String]
-  ): G[CommandSuccess] = {
+  ): F[CommandSuccess] = {
     val commandName = path.mkString("/", " ", "")
     F.ifM(testPermission(command, source))(
       createTreeCommandHelp(source, commandName, commandName, command, detail = true).flatMap { helpTexts =>
         val page = pageOps.setTitle(title) |+| pageOps.setContent(helpTexts)
-        FtoG(pagination.sendPage(page, source).as(Command.success()))
+        GtoF(pagination.sendPage(page, source).as(Command.success()))
       },
       Command.errorF("You don't have the permission to see the help for this command")
     )
@@ -127,7 +131,7 @@ abstract class KatLibCommands[F[_]: FlatMap, G[_], Page: Monoid, CommandSource, 
       detail: Boolean,
       indent: Int = 0,
       isIndentEnd: Boolean = false
-  ): G[List[Text]] =
+  ): F[List[Text]] =
     for {
       usage       <- commandUsage(command, source)
       help        <- commandHelp(command, source)
@@ -193,7 +197,7 @@ trait CommandSyntax[G[_], RootSender, RunExtra, TabExtra, Result, StaticChildCom
   type ChildCommand = scammander.ComplexChildCommand[G, StaticChildCommand]
 
   def toChild(
-      aliases: Set[String],
+      aliases: Seq[String],
       permission: Option[String] = None,
       help: RootSender => Option[String] = _ => None,
       description: RootSender => Option[String] = _ => None

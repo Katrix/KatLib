@@ -20,28 +20,28 @@ import net.katsstuff.scammander.{CommandFailure, ComplexChildCommand, ComplexCom
 import net.katstuff.katlib.algebras.{Localized, Pagination}
 import net.katstuff.katlib.command.{CommandSyntax, KatLibCommands}
 
-abstract class SpongeKatLibCommands[F[_]: FlatMap, G[_], Page: Monoid](FtoG: F ~> G)(
-    implicit pagination: Pagination.Aux[F, CommandSource, Page],
-    localized: Localized[F, CommandSource],
-    T: TextConversion[G],
-    F: MonadError[G, NonEmptyList[CommandFailure]]
-) extends KatLibCommands[F, G, Page, CommandSource, Player, User](FtoG)
-    with SpongeBase[G]
-    with SpongeValidators[G]
-    with SpongeParameter[G]
-    with SpongeOrParameter[G] { //We do not mix in the sponge help command
+abstract class SpongeKatLibCommands[G[_]: FlatMap, F[_], Page: Monoid](FtoG: G ~> F)(
+    implicit pagination: Pagination.Aux[G, CommandSource, Page],
+    localized: Localized[G, CommandSource],
+    T: TextConversion[F],
+    F: MonadError[F, NonEmptyList[CommandFailure]]
+) extends KatLibCommands[G, F, Page, CommandSource, Player, User](FtoG)
+    with SpongeBase[F]
+    with SpongeValidators[F]
+    with SpongeParameter[F]
+    with SpongeOrParameter[F] { //We do not mix in the sponge help command
   import cats.instances.option._
 
-  override def testPermission(command: SpongeCommandWrapper[G], source: CommandSource): G[Boolean] =
-    command.testPermission(source).pure[G]
+  override def testPermission(command: SpongeCommandWrapper[F], source: CommandSource): F[Boolean] =
+    command.testPermission(source).pure[F]
 
-  override def commandUsage(command: SpongeCommandWrapper[G], source: CommandSource): G[Text] =
+  override def commandUsage(command: SpongeCommandWrapper[F], source: CommandSource): F[Text] =
     T.spongeToOur(command.getUsage(source))
 
-  override def commandHelp(command: SpongeCommandWrapper[G], source: CommandSource): G[Option[Text]] =
+  override def commandHelp(command: SpongeCommandWrapper[F], source: CommandSource): F[Option[Text]] =
     command.getHelp(source).toOption.traverse(T.spongeToOur)
 
-  override def commandDescription(command: SpongeCommandWrapper[G], source: CommandSource): G[Option[Text]] =
+  override def commandDescription(command: SpongeCommandWrapper[F], source: CommandSource): F[Option[Text]] =
     command.getShortDescription(source).toOption.traverse(T.spongeToOur)
 
   override implicit val playerValidator: UserValidator[Player] = playerSender
@@ -49,7 +49,7 @@ abstract class SpongeKatLibCommands[F[_]: FlatMap, G[_], Page: Monoid](FtoG: F ~
 
   override implicit def commandOps(
       command: ComplexCommand
-  ): CommandSyntax[G, CommandSource, Unit, Option[Location[World]], Int, SpongeCommandWrapper[G]] =
+  ): CommandSyntax[F, CommandSource, Unit, Option[Location[World]], Int, SpongeCommandWrapper[F]] =
     new SpongeCommandSyntax(command, FunctionK.lift(runComputation))
 }
 class SpongeCommandSyntax[G[_]](
