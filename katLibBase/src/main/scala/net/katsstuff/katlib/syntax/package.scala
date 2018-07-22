@@ -1,11 +1,11 @@
-package net.katstuff.katlib
+package net.katsstuff.katlib
 
 import java.util.{Locale, UUID}
 
 import cats.FlatMap
 import cats.syntax.all._
+import net.katsstuff.katlib.algebras.{CommandSources, Locations, Players, Users}
 import net.katsstuff.minejson.text.Text
-import net.katstuff.katlib.algebras.{CommandSources, Locations, Players, Users}
 
 package object syntax {
 

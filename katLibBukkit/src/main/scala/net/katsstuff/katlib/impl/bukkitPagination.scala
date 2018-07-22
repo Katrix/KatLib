@@ -5,9 +5,9 @@ import java.util.UUID
 import org.bukkit.command.CommandSender
 
 import cats.effect.Sync
+import net.katsstuff.katlib.algebras.{PageOperations, Pagination}
 import net.katsstuff.katlib.internal.util.SimplePagination
 import net.katsstuff.minejson.text.Text
-import net.katstuff.katlib.algebras.{PageOperations, Pagination}
 
 class BukkitPagination[F[_]](newPages: (CommandSender, UUID => Seq[Text]) => F[Text])(implicit F: Sync[F])
     extends Pagination[F, CommandSender] {

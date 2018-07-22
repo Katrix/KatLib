@@ -5,9 +5,8 @@ import org.spongepowered.api.service.pagination.PaginationList
 
 import cats.effect.Sync
 import cats.syntax.all._
-import net.katsstuff.katlib.algebras.TextConversion
+import net.katsstuff.katlib.algebras.{PageOperations, Pagination, TextConversion}
 import net.katsstuff.minejson.text.Text
-import net.katstuff.katlib.algebras.{PageOperations, Pagination}
 
 class SpongePagination[F[_]](implicit F: Sync[F], T: TextConversion[F]) extends Pagination[F, CommandSource] {
   override type Page = List[PageOps]

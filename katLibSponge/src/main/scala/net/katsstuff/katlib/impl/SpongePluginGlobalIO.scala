@@ -4,7 +4,7 @@ import java.nio.file.Path
 
 import cats.effect.IO
 import net.katsstuff.katlib.KatPlugin
-import net.katstuff.katlib.algebras.PluginGlobal
+import net.katsstuff.katlib.algebras.PluginGlobal
 
 class SpongePluginGlobalIO(implicit plugin: KatPlugin) extends PluginGlobal[IO] {
 

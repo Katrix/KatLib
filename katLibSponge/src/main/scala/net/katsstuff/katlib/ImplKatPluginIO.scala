@@ -31,10 +31,8 @@ import org.spongepowered.api.entity.living.player.{Player, User}
 import org.spongepowered.api.plugin.PluginContainer
 
 import cats.effect.IO
-import net.katsstuff.katlib.algebras.TextConversion
+import net.katsstuff.katlib.algebras._
 import net.katsstuff.katlib.impl._
-import net.katstuff.katlib.algebras._
-import net.katstuff.katlib.impl.{FileAccessImpl, LocalizedImpl}
 
 abstract class ImplKatPluginIO(val logger: Logger, val configDir: Path, spongeContainer: PluginContainer)
     extends KatPlugin {

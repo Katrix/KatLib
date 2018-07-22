@@ -1,4 +1,4 @@
-package net.katstuff.katlib.algebras
+package net.katsstuff.katlib.algebras
 
 /**
   * Provides access to a way to do logging.

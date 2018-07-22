@@ -25,23 +25,19 @@ case class SimplePagination(
     if (content.nonEmpty) {
       val paddingFiller = Text(Seq.fill(10)(padding): _*)
 
-      def createNextButton(uuid: UUID, pageNum: Int, pageEnd: Int): Text = {
+      def createNextButton(uuid: UUID, pageNum: Int, pageEnd: Int): Text =
         if (pageNum == pageEnd - 1) Text.Empty
-        else {
-          val basic     = t">>"
-          val withHover = basic.onHover = HoverAction.ShowText(t"Next page")
-          withHover.onClick = ClickAction.RunCommand(s"/katlib:page next ${uuid.toString}")
-        }
-      }
+        else
+          t">>"
+            .hoverText(HoverText.ShowText(t"Next page"))
+            .onClick(ClickAction.RunCommand(s"/katlib:page next ${uuid.toString}"))
 
-      def createPrevButton(uuid: UUID, pageNum: Int): Text = {
+      def createPrevButton(uuid: UUID, pageNum: Int): Text =
         if (pageNum == 0) Text.Empty
-        else {
-          val basic     = t"<<"
-          val withHover = basic.onHover = HoverAction.ShowText(t"Previous page")
-          withHover.onClick = ClickAction.RunCommand(s"/katlib:page prev ${uuid.toString}")
-        }
-      }
+        else
+          t"<<"
+            .hoverText(HoverText.ShowText(t"Previous page"))
+            .onClick(ClickAction.RunCommand(s"/katlib:page prev ${uuid.toString}"))
 
       val rawPages = content.grouped(linesPerPage - 2).toSeq.zipWithIndex
       val createPages = (uuid: UUID) => {

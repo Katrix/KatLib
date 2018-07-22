@@ -7,7 +7,7 @@ import scala.concurrent.duration.Duration
 import com.google.common.cache.CacheBuilder
 
 import cats.effect.Sync
-import net.katstuff.katlib.algebras.Cache
+import net.katsstuff.katlib.algebras.Cache
 
 class SpongeCache[F[_]](implicit F: Sync[F]) extends Cache[F] {
   override type CacheType[K, V] = mutable.Map[K, V]

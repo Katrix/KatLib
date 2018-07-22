@@ -2,7 +2,7 @@ package net.katsstuff.katlib.impl
 
 import cats.effect.Sync
 import net.katsstuff.katlib.KatPlugin
-import net.katstuff.katlib.algebras.LogHelper
+import net.katsstuff.katlib.algebras.LogHelper
 
 class SpongeLogHelper[F[_]](implicit plugin: KatPlugin, F: Sync[F]) extends LogHelper[F] {
 

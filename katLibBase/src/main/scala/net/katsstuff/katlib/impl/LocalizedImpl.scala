@@ -1,10 +1,10 @@
-package net.katstuff.katlib.impl
+package net.katsstuff.katlib.impl
 
 import java.util.Locale
 
-import cats.{~>, FlatMap}
+import cats.{FlatMap, ~>}
 import cats.syntax.flatMap._
-import net.katstuff.katlib.algebras.{CommandSources, Localized}
+import net.katsstuff.katlib.algebras.{CommandSources, Localized}
 
 class LocalizedImpl[F[_]: FlatMap, CommandSource](implicit CS: CommandSources[F, CommandSource])
     extends Localized[F, CommandSource] { self =>

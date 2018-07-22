@@ -9,8 +9,8 @@ import org.apache.commons.lang.text.StrSubstitutor
 
 import cats.Monad
 import cats.syntax.all._
+import net.katsstuff.katlib.algebras.Resource
 import net.katsstuff.minejson.text.Text
-import net.katstuff.katlib.algebras.Resource
 
 class BukkitResource[F[_]: Monad](location: String) extends Resource[F] {
 

@@ -7,7 +7,7 @@ import org.bukkit.{Bukkit, OfflinePlayer}
 
 import cats.effect.Sync
 import cats.syntax.all._
-import net.katstuff.katlib.algebras.{UserAccess, Users}
+import net.katsstuff.katlib.algebras.{UserAccess, Users}
 import net.milkbowl.vault.chat.Chat
 import net.milkbowl.vault.permission.Permission
 

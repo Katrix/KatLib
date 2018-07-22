@@ -6,7 +6,7 @@ import org.bukkit.{Bukkit, Location}
 import org.bukkit.entity.Player
 
 import cats.effect.Sync
-import net.katstuff.katlib.algebras.Locations
+import net.katsstuff.katlib.algebras.Locations
 
 class BukkitLocations[F[_]](implicit F: Sync[F]) extends Locations[F, Location, Player] {
   override def getX(location: Location):       F[Double] = F.delay(location.getX)

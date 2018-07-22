@@ -1,4 +1,4 @@
-package net.katstuff.katlib.algebras
+package net.katsstuff.katlib.algebras
 
 import net.katsstuff.minejson.text.Text
 

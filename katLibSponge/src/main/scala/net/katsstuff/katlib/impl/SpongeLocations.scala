@@ -8,8 +8,8 @@ import org.spongepowered.api.world.{Location, World}
 
 import cats.effect.Sync
 import cats.syntax.all._
+import net.katsstuff.katlib.algebras.Locations
 import net.katsstuff.katlib.helper.Implicits._
-import net.katstuff.katlib.algebras.Locations
 
 class SpongeLocations[F[_]](implicit F: Sync[F]) extends Locations[F, SpongeLocation, Player] {
   override def getX(location: SpongeLocation):       F[Double] = location.x.pure

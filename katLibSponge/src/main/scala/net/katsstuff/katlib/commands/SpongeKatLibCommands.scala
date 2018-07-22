@@ -11,21 +11,20 @@ import cats.arrow.FunctionK
 import cats.data.NonEmptyList
 import cats.kernel.Monoid
 import cats.syntax.all._
-import cats.{~>, FlatMap, MonadError}
-import net.katsstuff.katlib.algebras.TextConversion
+import cats.{FlatMap, MonadError, ~>}
+import net.katsstuff.katlib.algebras.{Localized, Pagination, TextConversion}
+import net.katsstuff.katlib.command.{CommandSyntax, KatLibCommands}
 import net.katsstuff.katlib.helper.Implicits._
 import net.katsstuff.minejson.text.Text
 import net.katsstuff.scammander.sponge.components._
 import net.katsstuff.scammander.{CommandFailure, ComplexChildCommand, ComplexCommand}
-import net.katstuff.katlib.algebras.{Localized, Pagination}
-import net.katstuff.katlib.command.{CommandSyntax, KatLibCommands}
 
-abstract class SpongeKatLibCommands[G[_]: FlatMap, F[_], Page: Monoid](FtoG: G ~> F)(
+abstract class SpongeKatLibCommands[G[_]: FlatMap, F[_], Page: Monoid](GtoF: G ~> F)(
     implicit pagination: Pagination.Aux[G, CommandSource, Page],
     localized: Localized[G, CommandSource],
     T: TextConversion[F],
     F: MonadError[F, NonEmptyList[CommandFailure]]
-) extends KatLibCommands[G, F, Page, CommandSource, Player, User](FtoG)
+) extends KatLibCommands[G, F, Page, CommandSource, Player, User](GtoF)
     with SpongeBase[F]
     with SpongeValidators[F]
     with SpongeParameter[F]
@@ -52,24 +51,26 @@ abstract class SpongeKatLibCommands[G[_]: FlatMap, F[_], Page: Monoid](FtoG: G ~
   ): CommandSyntax[F, CommandSource, Unit, Option[Location[World]], Int, SpongeCommandWrapper[F]] =
     new SpongeCommandSyntax(command, FunctionK.lift(runComputation))
 }
-class SpongeCommandSyntax[G[_]](
-    command: ComplexCommand[G, CommandSource, Unit, Option[Location[World]], Int, SpongeCommandWrapper[G]],
-    runComputation: FunctionK[G, ({ type L[A] = Either[NonEmptyList[CommandFailure], A] })#L]
-)(implicit G: MonadError[G, NonEmptyList[CommandFailure]])
-    extends CommandSyntax[G, CommandSource, Unit, Option[Location[World]], Int, SpongeCommandWrapper[G]] {
-
+class SpongeCommandSyntax[F[_]](
+    command: ComplexCommand[F, CommandSource, Unit, Option[Location[World]], Int, SpongeCommandWrapper[F]],
+    runComputation: FunctionK[F, Either[NonEmptyList[CommandFailure], ?]]
+)(implicit G: MonadError[F, NonEmptyList[CommandFailure]])
+    extends CommandSyntax[F, CommandSource, Unit, Option[Location[World]], Int, SpongeCommandWrapper[F]] {
   override def toChild(
-      aliases: Set[String],
+      aliases: Seq[String],
       permission: Option[String],
-      help: CommandSource => Option[String],
-      description: CommandSource => Option[String]
-  ): ChildCommand =
-    ComplexChildCommand(
-      aliases,
-      SpongeCommandWrapper(
-        command,
-        CommandInfo(permission, help.andThen(_.map(SpongeText.of)), description.andThen(_.map(SpongeText.of))),
-        runComputation
-      )
+      help: CommandSource => F[Option[String]],
+      description: CommandSource => F[Option[String]]
+  ): ChildCommand = ComplexChildCommand(
+    aliases.toSet, //TODO: Change to take a seq
+    SpongeCommandWrapper(
+      command,
+      CommandInfo(
+        permission,
+        help.andThen(_.map(_.map(SpongeText.of))),
+        description.andThen(_.map(_.map(SpongeText.of)))
+      ),
+      runComputation
     )
+  )
 }

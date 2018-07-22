@@ -12,12 +12,11 @@ import org.bukkit.plugin.java.JavaPlugin
 
 import cats.data.{EitherT, NonEmptyList}
 import cats.effect.IO
+import net.katsstuff.katlib.algebras._
 import net.katsstuff.katlib.commands.BukkitKatLibCommands
 import net.katsstuff.katlib.impl._
-import net.katsstuff.katlib.internal.KatLib
+import net.katsstuff.katlib.internal.KatLibPlugin
 import net.katsstuff.scammander.CommandFailure
-import net.katstuff.katlib.algebras._
-import net.katstuff.katlib.impl.{FileAccessImpl, LocalizedImpl}
 
 /**
   * A small convenience file to make stuff more scala like.
@@ -31,7 +30,7 @@ class ScalaPluginIO extends JavaPlugin {
   implicit val files:          FileAccess[IO]                                   = new FileAccessImpl[IO]
   implicit val Localized:      Localized[IO, CommandSender]                     = new LocalizedImpl[IO, CommandSender]
   implicit val log:            LogHelper[IO]                                    = new BukkitLogHelper[IO]
-  implicit val pagination:     Pagination.Aux[IO, CommandSender, List[PageOps]] = new BukkitPagination[IO](KatLib.newPages)
+  implicit val pagination:     Pagination.Aux[IO, CommandSender, List[PageOps]] = new BukkitPagination[IO](KatLibPlugin.newPages)
   implicit val players:        Players[IO, Player]                              = new BukkitPlayers[IO]
   implicit val users:          Users[IO, OfflinePlayer, Player]                 = new BukkitUsersClass[IO]
   implicit val userAccess:     UserAccess[IO, OfflinePlayer]                    = new BukkitUserAccess[IO]

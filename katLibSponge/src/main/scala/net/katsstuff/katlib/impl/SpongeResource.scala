@@ -10,9 +10,8 @@ import org.spongepowered.api.text.TextTemplate
 
 import cats.Monad
 import cats.syntax.all._
-import net.katsstuff.katlib.algebras.TextConversion
+import net.katsstuff.katlib.algebras.{Resource, TextConversion}
 import net.katsstuff.minejson.text.Text
-import net.katstuff.katlib.algebras.Resource
 
 class SpongeResource[F[_]: Monad](location: String)(implicit T: TextConversion[F]) extends Resource[F] {
 

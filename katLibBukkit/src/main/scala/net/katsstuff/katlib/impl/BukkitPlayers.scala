@@ -8,10 +8,10 @@ import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 
 import cats.effect.Sync
+import net.katsstuff.katlib.algebras.Players
 import net.katsstuff.katlib.helper.ProtocolHelper
 import net.katsstuff.minejson.text.Text
 import net.katsstuff.minejson.text.serializer.FormattingCodeSerializer
-import net.katstuff.katlib.algebras.Players
 import net.milkbowl.vault.chat.Chat
 import net.milkbowl.vault.permission.Permission
 

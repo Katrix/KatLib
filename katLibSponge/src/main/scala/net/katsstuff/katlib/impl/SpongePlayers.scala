@@ -9,10 +9,9 @@ import org.spongepowered.api.entity.living.player.Player
 
 import cats.effect.Sync
 import cats.syntax.all._
-import net.katsstuff.katlib.algebras.TextConversion
+import net.katsstuff.katlib.algebras.{Players, TextConversion}
 import net.katsstuff.katlib.helper.Implicits._
 import net.katsstuff.minejson.text.Text
-import net.katstuff.katlib.algebras.Players
 
 class SpongePlayers[F[_]](implicit val F: Sync[F], val T: TextConversion[F])
     extends Players[F, Player]

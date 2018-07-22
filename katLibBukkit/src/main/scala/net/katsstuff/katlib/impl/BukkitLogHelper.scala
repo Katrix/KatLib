@@ -4,7 +4,7 @@ import java.util.logging.Level
 
 import cats.effect.Sync
 import net.katsstuff.katlib.ScalaPluginIO
-import net.katstuff.katlib.algebras.LogHelper
+import net.katsstuff.katlib.algebras.LogHelper
 
 class BukkitLogHelper[F[_]](implicit F: Sync[F], scalaPlugin: ScalaPluginIO) extends LogHelper[F] {
   override def trace(any: Any): F[Unit] = F.delay(scalaPlugin.logger.finer(any.toString))

@@ -6,9 +6,8 @@ import org.spongepowered.api.command.CommandSource
 
 import cats.effect.Sync
 import cats.syntax.all._
-import net.katsstuff.katlib.algebras.TextConversion
+import net.katsstuff.katlib.algebras.{CommandSources, TextConversion}
 import net.katsstuff.minejson.text.Text
-import net.katstuff.katlib.algebras.CommandSources
 
 trait SpongeCommandSources[F[_], Source <: CommandSource] extends CommandSources[F, Source] {
 

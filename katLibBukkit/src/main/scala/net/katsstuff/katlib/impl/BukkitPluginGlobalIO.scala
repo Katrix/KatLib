@@ -6,7 +6,7 @@ import org.bukkit.Bukkit
 
 import cats.effect.IO
 import net.katsstuff.katlib.ScalaPluginIO
-import net.katstuff.katlib.algebras.PluginGlobal
+import net.katsstuff.katlib.algebras.PluginGlobal
 
 class BukkitPluginGlobalIO(implicit plugin: ScalaPluginIO) extends PluginGlobal[IO] {
 

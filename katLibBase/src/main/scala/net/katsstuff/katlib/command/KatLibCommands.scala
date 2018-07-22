@@ -1,4 +1,4 @@
-package net.katstuff.katlib.command
+package net.katsstuff.katlib.command
 
 import java.util.Locale
 
@@ -7,10 +7,11 @@ import scala.language.implicitConversions
 import cats.kernel.Monoid
 import cats.syntax.all._
 import cats.{FlatMap, ~>}
+import net.katsstuff.katlib.algebras.{Localized, Pagination}
 import net.katsstuff.minejson.text.{Text, _}
 import net.katsstuff.scammander
 import net.katsstuff.scammander.{HelpCommands, ScammanderBaseAll}
-import net.katstuff.katlib.algebras.{Localized, Pagination}
+import net.katsstuff.katlib.algebras.{Localized, Pagination}
 
 abstract class KatLibCommands[G[_]: FlatMap, F[_], Page: Monoid, CommandSource, Player, User](val GtoF: G ~> F)(
     implicit
@@ -19,7 +20,7 @@ abstract class KatLibCommands[G[_]: FlatMap, F[_], Page: Monoid, CommandSource, 
 ) extends ScammanderBaseAll[F]
     with HelpCommands[F] {
 
-  def GtoFLocalized[A](src: CommandSuccess)(f: Locale => G[A]): F[A] = GtoF(LocalizedG(src)(f))
+  def GtoFLocalized[A](src: CommandSource)(f: Locale => G[A]): F[A] = GtoF(LocalizedG(src)(f))
 
   override type RootSender = CommandSource
 
@@ -42,18 +43,20 @@ abstract class KatLibCommands[G[_]: FlatMap, F[_], Page: Monoid, CommandSource, 
     * Helper for creating a help when registering a command.
     */
   object KHelp {
-    def apply(f: CommandSource => Text): CommandSource => Option[Text] = f andThen Some.apply
-    def apply(text: Text):               CommandSource => Option[Text] = _ => Some(text)
-    val none:                            CommandSource => None.type    = _ => None
+    def liftF(f: CommandSource => F[Text]): CommandSource => F[Option[Text]] = f.andThen(_.map(Some.apply))
+    def apply(f: CommandSource => Text): CommandSource => F[Option[Text]] = f.andThen(text => F.pure(Some(text)))
+    def apply(text: Text):               CommandSource => F[Option[Text]] = _ => F.pure(Some(text))
+    val none:                            CommandSource => F[Option[Text]] = _ => F.pure(None)
   }
 
   /**
     * Helper for creating an description when registering a command.
     */
   object KDescription {
-    def apply(f: CommandSource => Text): CommandSource => Option[Text] = f andThen Some.apply
-    def apply(text: Text):               CommandSource => Option[Text] = _ => Some(text)
-    val none:                            CommandSource => None.type    = _ => None
+    def liftF(f: CommandSource => F[Text]): CommandSource => F[Option[Text]] = f.andThen(_.map(Some.apply))
+    def apply(f: CommandSource => Text): CommandSource => F[Option[Text]] = f.andThen(text => F.pure(Some(text)))
+    def apply(text: Text):               CommandSource => F[Option[Text]] = _ => F.pure(Some(text))
+    val none:                            CommandSource => F[Option[Text]] = _ => F.pure(None)
   }
 
   implicit def playerParam: Parameter[Player]
@@ -141,9 +144,9 @@ abstract class KatLibCommands[G[_]: FlatMap, F[_], Page: Monoid, CommandSource, 
         //Doubt a command tree will go that deep anyway
 
         import cats.instances.list._
-        val helpBase = t"$Green$Underlined$commandName $usage".onClick = ClickAction.SuggestCommand(fullCommandName)
+        val helpBase = t"$Green$Underlined$commandName $usage".onClick(ClickAction.SuggestCommand(fullCommandName))
 
-        val withHover = description.fold(helpBase)(desc => helpBase.onHover = HoverAction.ShowText(t"$desc"))
+        val withHover = description.fold(helpBase)(desc => helpBase.hoverText(HoverText.ShowText(t"$desc")))
 
         val withExtra =
           if (detail) help.orElse(description).fold(withHover)(desc => t"$withHover - $desc")
@@ -193,13 +196,13 @@ abstract class KatLibCommands[G[_]: FlatMap, F[_], Page: Monoid, CommandSource, 
     } yield res
 }
 
-trait CommandSyntax[G[_], RootSender, RunExtra, TabExtra, Result, StaticChildCommand] {
-  type ChildCommand = scammander.ComplexChildCommand[G, StaticChildCommand]
+trait CommandSyntax[F[_], RootSender, RunExtra, TabExtra, Result, StaticChildCommand] {
+  type ChildCommand = scammander.ComplexChildCommand[StaticChildCommand]
 
   def toChild(
       aliases: Seq[String],
       permission: Option[String] = None,
-      help: RootSender => Option[String] = _ => None,
-      description: RootSender => Option[String] = _ => None
+      help: RootSender => F[Option[String]],
+      description: RootSender => F[Option[String]]
   ): ChildCommand
 }

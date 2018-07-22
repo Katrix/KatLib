@@ -7,9 +7,9 @@ import org.bukkit.entity.Player
 
 import cats.effect.Sync
 import cats.syntax.all._
+import net.katsstuff.katlib.algebras.CommandSources
 import net.katsstuff.katlib.helper.ProtocolHelper
 import net.katsstuff.minejson.text.Text
-import net.katstuff.katlib.algebras.CommandSources
 
 trait BukkitCommandSources[F[_], Sender <: CommandSender] extends CommandSources[F, Sender] {
   implicit def F: Sync[F]

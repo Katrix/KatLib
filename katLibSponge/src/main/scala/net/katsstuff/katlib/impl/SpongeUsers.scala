@@ -9,7 +9,7 @@ import org.spongepowered.api.entity.living.player.{Player, User}
 import org.spongepowered.api.service.user.UserStorageService
 
 import cats.effect.Sync
-import net.katstuff.katlib.algebras.{UserAccess, Users}
+import net.katsstuff.katlib.algebras.{UserAccess, Users}
 import net.katsstuff.katlib.helper.Implicits._
 
 trait SpongeUsers[F[_], AbstractUser <: User] extends Users[F, AbstractUser, Player] {

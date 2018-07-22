@@ -11,13 +11,13 @@ import cats.data.NonEmptyList
 import cats.effect.Sync
 import cats.kernel.Monoid
 import cats.syntax.all._
-import cats.{~>, MonadError}
+import cats.{MonadError, ~>}
+import net.katsstuff.katlib.algebras.{Cache, CommandSources, Localized, Pagination}
 import net.katsstuff.katlib.commands.BukkitKatLibCommands
 import net.katsstuff.katlib.internal.util.Zipper
 import net.katsstuff.minejson.text._
 import net.katsstuff.scammander.CommandFailure
 import net.katsstuff.scammander.bukkit.components.BukkitExtra
-import net.katstuff.katlib.algebras.{Cache, CommandSources, Localized, Pagination}
 
 abstract class KatLibCommandBundle[G[_]: Sync, F[_], Page: Monoid](FtoG: G ~> F)(
     implicit
