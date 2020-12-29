@@ -28,6 +28,7 @@ target
 project/target
 publish
 deployKey.sbt
+.bsp
 
 #mac
 .DS_Store
