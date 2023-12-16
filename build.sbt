@@ -8,11 +8,26 @@ lazy val commonSettings = Seq(
     "utf-8",
     "-deprecation",
     "-feature",
-    "-unchecked"
+    "-unchecked",
   ),
-  scalaVersion := "3.0.0-M3",
+  scalaVersion := "3.1.1",
   //crossPaths := false,
   resolvers += Resolver.sonatypeRepo("snapshots")
+)
+
+lazy val exclusions = Seq(
+  ExclusionRule("org.typelevel", "cats-core_2.13"),
+  ExclusionRule("org.typelevel", "cats-kernel_2.13"),
+  ExclusionRule("org.typelevel", "cats-core_3.0.0-M2"),
+  ExclusionRule("org.typelevel", "cats-kernel_3.0.0-M2"),
+  ExclusionRule("org.typelevel", "cats-effect_3.0.0-M2"),
+  ExclusionRule("org.typelevel", "simulacrum-scalafix-annotations_3.0.0-M2"),
+  ExclusionRule("org.typelevel", "jawn-parser_2.13"),
+  ExclusionRule("io.circe", "circe-parser_2.13"),
+  ExclusionRule("io.circe", "circe-core_2.13"),
+  ExclusionRule("io.circe", "circe-jawn_2.13"),
+  ExclusionRule("io.circe", "circe-numbers_2.13"),
+  ExclusionRule("org.scala-lang", "scala3-library_3.0.0-M2")
 )
 
 lazy val katLibSponge =
@@ -21,12 +36,22 @@ lazy val katLibSponge =
     .settings(
       commonSettings,
       name := s"katlib-sponge${removeSnapshot(spongeApiVersion.value)}",
+      compileOrder := CompileOrder.JavaThenScala,
+      excludeDependencies ++= exclusions,
+      libraryDependencies += "org.typelevel" %% "cats-effect" % "2.3.1",
       libraryDependencies ++= Seq(
-        ("io.circe" %% "circe-core"   % "0.12.3").withDottyCompat(scalaVersion.value),
-        ("io.circe" %% "circe-parser" % "0.12.3").withDottyCompat(scalaVersion.value),
-        ("io.circe" %% "circe-config" % "0.8.0").withDottyCompat(scalaVersion.value)
+        "io.circe" %% "circe-core"   % "0.14.0-M2",
+        "io.circe" %% "circe-parser" % "0.14.0-M2",
+      ),
+      libraryDependencies ++= Seq(
+        "org.tpolecat" %% "doobie-core" % "0.10.0",
+        ("org.tpolecat" %% "doobie-h2"   % "0.10.0").exclude("com.h2database", "h2")
       ),
       libraryDependencies += ("net.katsstuff" %% "minejson-text" % "0.3.2").withDottyCompat(scalaVersion.value),
+      libraryDependencies ++= Seq(
+        "net.katsstuff" %% "perspective"            % "0.0.5",
+        "net.katsstuff" %% "perspective-derivation" % "0.0.5"
+      ),
       description := "Scala loader and misc utilities for Sponge",
       spongeV8.pluginLoader := "scala_plain",
       spongeV8.pluginInfo := Seq(

@@ -12,7 +12,7 @@ class ScalaPluginLoader extends JVMPluginLoader[JVMPluginContainer]:
   override def createPluginContainer(
     candidate: PluginCandidate[JVMPluginResource], 
     environment: PluginEnvironment
-  ): Optional[JVMPluginContainer] = Optional.of(new JVMPluginContainer(candidate))
+  ): Optional[JVMPluginContainer] = Optional.of(JVMPluginContainer(candidate))
 
   override def createPluginInstance(
     environment: PluginEnvironment, 
@@ -26,4 +26,4 @@ class ScalaPluginLoader extends JVMPluginLoader[JVMPluginContainer]:
       module.getField("MODULE$").get(null)
     catch 
       case NonFatal(e) => 
-        throw new InvalidPluginException(s"An error occurred creating an instance of plugin '${container.getMetadata.getId}'", e)
+        throw InvalidPluginException(s"An error occurred creating an instance of plugin '${container.getMetadata.getId}'", e)

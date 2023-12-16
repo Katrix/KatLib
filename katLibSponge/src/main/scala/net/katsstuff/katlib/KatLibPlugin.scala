@@ -12,7 +12,6 @@ import scala.concurrent.ExecutionContext
 trait KatLibPlugin:
   def usesSharedConfig: Boolean = true
   
-  given KatLibPlugin = this
   given container: PluginContainer = Sponge.getPluginManager.fromInstance(this).get
   
   lazy val configRoot: ConfigRoot = 
